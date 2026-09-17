@@ -15,7 +15,7 @@ ControlNet reads. That directness is the point of the method.
 |---|---|
 | **Weights** | [baki0115/gaze-controlnet-qwen-image-edit](https://huggingface.co/baki0115/gaze-controlnet-qwen-image-edit) — trained ControlNet checkpoints |
 | **Labels** | [baki0115/GazeCtrl_dataset](https://huggingface.co/datasets/baki0115/GazeCtrl_dataset) — the human-curated gaze labels |
-| **Interactive results** | 18 sources x 24 gaze targets, with ground-truth reference frames |
+| **Interactive results** | [baki0115/gaze-ctrl-360](https://huggingface.co/spaces/baki0115/gaze-ctrl-360) — 18 sources x 24 gaze targets, with ground-truth reference frames |
 
 ---
 
@@ -265,6 +265,10 @@ Metric definitions, and what each one cannot tell you, are in
 [`docs/conventions.md`](docs/conventions.md).
 
 ### Interactive demo
+
+The published page is at
+**[huggingface.co/spaces/baki0115/gaze-ctrl-360](https://huggingface.co/spaces/baki0115/gaze-ctrl-360)**
+— a static viewer over generations produced offline, not a live model. To rebuild it:
 
 ```bash
 python eval/build_srcs_v2.py                                   # choose front/side/back sources

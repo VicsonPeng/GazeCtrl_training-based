@@ -1,96 +1,81 @@
 """
 download_models.py
-Downloads all models required by the Qwen Image Edit 2509 + ControlNet Union pipeline.
+Fetch the frozen weights the gaze ControlNet pipeline runs on.
 
-Models (ComfyUI format from Comfy-Org HuggingFace repos):
-  1. qwen_image_edit_2509_fp8_e4m3fn.safetensors  (FLUX diffusion model, ~12 GB)
-  2. qwen_image_vae.safetensors                    (VAE, ~335 MB)
-  3. qwen_2.5_vl_7b_fp8_scaled.safetensors        (Qwen VL text encoder, ~8 GB)
-  4. Qwen-Image-Lightning-4steps-V1.0.safetensors  (Lightning LoRA, ~800 MB)
-  5. Qwen-Image-InstantX-ControlNet-Union          (ControlNet, ~3 GB)
+Required (nothing works without these three):
+  1. qwen_image_edit_2509_fp8_e4m3fn.safetensors   Qwen backbone, frozen   (~19 GB)
+  2. qwen_image_vae.safetensors                    Qwen 3D VAE             (~250 MB)
+  3. Qwen-Image-InstantX-ControlNet-Union          ControlNet init         (~3.3 GB)
 
-Additionally for FLUX.1-dev training (sd-scripts):
-  6. flux1-dev.safetensors          (FLUX.1-dev diffusion model, ~24 GB)
-  7. ae.safetensors                 (FLUX VAE)
-  8. clip_l.safetensors             (CLIP-L text encoder)
-  9. t5xxl_fp16.safetensors         (T5-XXL text encoder, ~9 GB)
+Optional (--optional), not loaded by any current code path:
+  4. qwen_2.5_vl_7b_fp8_scaled.safetensors         Qwen VL text encoder    (~8.7 GB)
+     The pipeline feeds a zero tensor as txt_emb -- every bit of control arrives through
+     the ControlNet -- so this is only needed if you re-enable text conditioning.
+  5. Qwen-Image-Lightning-4steps-V1.0.safetensors  Lightning LoRA          (~1.6 GB)
+     For few-step sampling experiments; the training and eval scripts do not use it.
+
+Files land in the layout gaze_paths.py expects, so the two stay in sync.
 
 Usage:
-  python download_models.py                  # download all
-  python download_models.py --inference_only # Qwen models only (skip FLUX training models)
-  python download_models.py --training_only  # FLUX training models only
-  python download_models.py --check          # verify files exist without downloading
+  python download_models.py             # the three required weights
+  python download_models.py --optional  # those plus the text encoder and Lightning LoRA
+  python download_models.py --check     # report what is present, download nothing
 """
 
 import argparse
 import os
 import sys
 
-MODELS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from gaze_paths import MODELS as DEFAULT_MODELS_DIR  # noqa: E402
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Model registry
+#   dir  : subdirectory of the models root that the file is downloaded into
+#   path : path inside the HuggingFace repo
+#   The final location is <models_dir>/<dir>/<path> -- which is exactly what
+#   gaze_paths.BACKBONE / VAE / CONTROLNET_INIT point at.
 # ─────────────────────────────────────────────────────────────────────────────
 
-INFERENCE_MODELS = {
-    "unet": {
-        "local": "diffusion_models/qwen_image_edit_2509_fp8_e4m3fn.safetensors",
+REQUIRED_MODELS = {
+    "backbone": {
+        "dir":   "diffusion_models",
         "repo":  "Comfy-Org/Qwen-Image-Edit_ComfyUI",
         "path":  "split_files/diffusion_models/qwen_image_edit_2509_fp8_e4m3fn.safetensors",
-        "size":  "~12 GB",
+        "size":  "~19 GB",
     },
-    "vae_qwen": {
-        "local": "vae/qwen_image_vae.safetensors",
+    "vae": {
+        "dir":   "vae",
         "repo":  "Comfy-Org/Qwen-Image_ComfyUI",
         "path":  "split_files/vae/qwen_image_vae.safetensors",
-        "size":  "~335 MB",
-    },
-    "clip_qwen": {
-        "local": "text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors",
-        "repo":  "Comfy-Org/Qwen-Image_ComfyUI",
-        "path":  "split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors",
-        "size":  "~8 GB",
-    },
-    "lora_lightning": {
-        "local": "loras/Qwen-Image-Lightning-4steps-V1.0.safetensors",
-        "repo":  "lightx2v/Qwen-Image-Lightning",
-        "path":  "Qwen-Image-Edit-Lightning-4steps-V1.0.safetensors",
-        "size":  "~800 MB",
+        "size":  "~250 MB",
     },
     "controlnet_union": {
-        "local": "controlnet/Qwen-Image-InstantX-ControlNet-Union.safetensors",
+        "dir":   "controlnet",
         "repo":  "Comfy-Org/Qwen-Image-InstantX-ControlNets",
         "path":  "split_files/controlnet/Qwen-Image-InstantX-ControlNet-Union.safetensors",
-        "size":  "~3 GB",
+        "size":  "~3.3 GB",
     },
 }
 
-TRAINING_MODELS = {
-    "flux_unet": {
-        "local": "diffusion_models/flux1-dev.safetensors",
-        "repo":  "black-forest-labs/FLUX.1-dev",
-        "path":  "flux1-dev.safetensors",
-        "size":  "~24 GB",
+OPTIONAL_MODELS = {
+    "text_encoder": {
+        "dir":   "text_encoders",
+        "repo":  "Comfy-Org/Qwen-Image_ComfyUI",
+        "path":  "split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors",
+        "size":  "~8.7 GB",
     },
-    "flux_vae": {
-        "local": "vae/ae.safetensors",
-        "repo":  "black-forest-labs/FLUX.1-dev",
-        "path":  "ae.safetensors",
-        "size":  "~335 MB",
-    },
-    "clip_l": {
-        "local": "text_encoders/clip_l.safetensors",
-        "repo":  "comfyanonymous/flux_text_encoders",
-        "path":  "clip_l.safetensors",
-        "size":  "~250 MB",
-    },
-    "t5xxl": {
-        "local": "text_encoders/t5xxl_fp16.safetensors",
-        "repo":  "comfyanonymous/flux_text_encoders",
-        "path":  "t5xxl_fp16.safetensors",
-        "size":  "~9 GB",
+    "lora_lightning": {
+        "dir":   "loras",
+        "repo":  "lightx2v/Qwen-Image-Lightning",
+        "path":  "Qwen-Image-Edit-Lightning-4steps-V1.0.safetensors",
+        "size":  "~1.6 GB",
     },
 }
+
+
+def _local_path(spec: dict, models_dir: str) -> str:
+    return os.path.join(models_dir, spec["dir"], spec["path"])
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -98,36 +83,25 @@ TRAINING_MODELS = {
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _download_one(key: str, spec: dict, models_dir: str, check_only: bool = False) -> bool:
-    local_path = os.path.join(models_dir, spec["local"])
+    local_path = _local_path(spec, models_dir)
     exists = os.path.exists(local_path)
 
     status = "✓" if exists else "✗"
-    note   = f"({spec['size']})" if not exists else f"({_file_mb(local_path):.0f} MB)"
+    note   = f"({_file_mb(local_path) / 1024:.1f} GB)" if exists else f"({spec['size']})"
     print(f"  [{status}] {key:20s}  {os.path.basename(local_path)}  {note}")
 
     if check_only or exists:
         return exists
 
-    os.makedirs(os.path.dirname(local_path), exist_ok=True)
+    target_dir = os.path.join(models_dir, spec["dir"])
+    os.makedirs(target_dir, exist_ok=True)
 
     try:
         from huggingface_hub import hf_hub_download
         print(f"        Downloading from {spec['repo']} ...")
-        hf_hub_download(
-            repo_id=spec["repo"],
-            filename=spec["path"],
-            local_dir=os.path.join(models_dir, os.path.dirname(spec["local"])),
-            local_dir_use_symlinks=False,
-        )
-        # huggingface_hub saves as the basename in local_dir; rename if needed
-        downloaded = os.path.join(
-            models_dir, os.path.dirname(spec["local"]),
-            os.path.basename(spec["path"])
-        )
-        if downloaded != local_path and os.path.exists(downloaded):
-            os.rename(downloaded, local_path)
-        print(f"        Saved → {local_path}")
-        return True
+        got = hf_hub_download(repo_id=spec["repo"], filename=spec["path"], local_dir=target_dir)
+        print(f"        Saved → {got}")
+        return os.path.exists(local_path)
     except Exception as e:
         print(f"        ERROR: {e}")
         print(f"        Manual download:")
@@ -146,22 +120,19 @@ def _file_mb(path: str) -> float:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--models_dir",     default=MODELS_DIR)
-    ap.add_argument("--inference_only", action="store_true",
-                    help="Only download Qwen inference models (skip FLUX training models)")
-    ap.add_argument("--training_only",  action="store_true",
-                    help="Only download FLUX training models")
-    ap.add_argument("--check",          action="store_true",
-                    help="Check which models are present without downloading")
+    ap.add_argument("--models_dir", default=DEFAULT_MODELS_DIR,
+                    help="weights root (default: gaze_paths.MODELS, i.e. $GAZE_MODELS)")
+    ap.add_argument("--optional",   action="store_true",
+                    help="also fetch the text encoder and Lightning LoRA (no current code loads them)")
+    ap.add_argument("--check",      action="store_true",
+                    help="report which weights are present without downloading")
     args = ap.parse_args()
 
     os.makedirs(args.models_dir, exist_ok=True)
 
-    to_download = {}
-    if not args.training_only:
-        to_download.update(INFERENCE_MODELS)
-    if not args.inference_only:
-        to_download.update(TRAINING_MODELS)
+    to_download = dict(REQUIRED_MODELS)
+    if args.optional:
+        to_download.update(OPTIONAL_MODELS)
 
     print(f"Models directory: {args.models_dir}\n")
     action = "Checking" if args.check else "Downloading"
