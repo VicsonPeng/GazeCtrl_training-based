@@ -1,0 +1,176 @@
+<title>Head Box Verification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#f4f6f9; --panel:#ffffff; --panel2:#eef1f6; --line:#dbe1ea;
+  --ink:#14202e; --mut:#5a6675; --dim:#8b96a5;
+  --accent:#1f7fb8; --accent2:#c07a12; --good:#2f9e63; --crit:#c0453a;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1015; --panel:#141a23; --panel2:#1b2330; --line:#28313f;
+  --ink:#e9edf4; --mut:#8a94a6; --dim:#5b6575;
+  --accent:#46b4e6; --accent2:#f6b74a; --good:#54d38a; --crit:#e8836f;
+}}
+:root[data-theme="dark"]{
+  --bg:#0d1015; --panel:#141a23; --panel2:#1b2330; --line:#28313f;
+  --ink:#e9edf4; --mut:#8a94a6; --dim:#5b6575;
+  --accent:#46b4e6; --accent2:#f6b74a; --good:#54d38a; --crit:#e8836f;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5}
+.wrap{max-width:1500px;margin:0 auto;padding-block:20px 70px;padding-left:16px;padding-right:16px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}
+h1{font-size:27px;font-weight:700;margin:0;letter-spacing:-.02em}
+.sub{color:var(--mut);margin:6px 0 0;max-width:74ch;font-size:14px}
+.sub .gk{color:var(--good);font-weight:600}.sub .ak{color:var(--accent2);font-weight:600}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--panel);border:1px solid var(--line);
+     border-radius:12px;padding:12px;margin-top:16px;display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg label{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+select{font-family:var(--mono);font-size:12px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);
+  border-radius:7px;padding:6px 8px;min-width:130px}
+select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tally{margin-left:auto;display:flex;gap:9px;align-items:center;font-family:var(--mono);font-size:11.5px;font-variant-numeric:tabular-nums}
+.tally .t{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--mut)}
+.tally .t b{color:var(--ink);font-size:15px}
+.tally .t.rej b{color:var(--crit)}
+.status{font-family:var(--mono);font-size:10.5px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);color:var(--dim)}
+.status.live{color:var(--good);border-color:color-mix(in srgb,var(--good) 45%,var(--line))}
+.status.ro{color:var(--accent2);border-color:color-mix(in srgb,var(--accent2) 45%,var(--line))}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;margin-top:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer;
+  padding:0;text-align:left;color:inherit;font:inherit;position:relative}
+.card:hover{border-color:var(--accent)}
+.card img{width:100%;display:block;aspect-ratio:1;object-fit:cover;background:#000;max-width:100%}
+.card .cc{padding:6px 7px 7px;font-family:var(--mono);font-size:9.5px;line-height:1.5;font-variant-numeric:tabular-nums}
+.card .who{color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card .num{color:var(--mut)}
+.card.rej{border-color:var(--crit)}
+.card.rej img{opacity:.3;filter:grayscale(1)}
+.card.rej::after{content:"EXCLUDED";position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.12em;background:var(--crit);color:#fff;padding:3px 8px;border-radius:5px}
+.card.nobox{border-style:dashed;border-color:var(--accent2)}
+.tag{position:absolute;top:5px;right:5px;font-family:var(--mono);font-size:8px;font-weight:600;letter-spacing:.06em;
+  padding:2px 5px;border-radius:4px;background:rgba(0,0,0,.7);color:#fff}
+.legend{font-family:var(--mono);font-size:10.5px;color:var(--dim);margin-top:14px;line-height:1.8;border-top:1px solid var(--line);padding-top:11px}
+.sw{display:inline-block;width:16px;height:9px;border-radius:2px;vertical-align:middle;margin-right:4px}
+.empty{padding:50px 10px;text-align:center;color:var(--dim);font-family:var(--mono);font-size:12px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<div class="wrap">
+  <p class="eyebrow">Stage-1 crop prep · SHHQ clean set</p>
+  <h1>Head Box Verification</h1>
+  <p class="sub">Each frame shows its detected <span class="gk">head box</span> and the <span class="ak">k=2.0 crop</span> that box would produce during pretraining — judge a box by the crop it causes, not by the rectangle alone. <b>Click any frame to exclude it</b>; exclusions are saved and I read them back to filter the training set. Sort by detector confidence to put the doubtful ones first.</p>
+
+  <div class="bar">
+    <div class="fg"><label for="fBox">box source</label><select id="fBox"></select></div>
+    <div class="fg"><label for="fMode">mode</label><select id="fMode"></select></div>
+    <div class="fg"><label for="fId">identity</label><select id="fId"></select></div>
+    <div class="fg"><label for="fShow">show</label><select id="fShow"></select></div>
+    <div class="fg"><label for="fSort">sort</label><select id="fSort"></select></div>
+    <div class="tally">
+      <span class="status" id="status">connecting…</span>
+      <span class="t">showing <b id="nShow">0</b></span>
+      <span class="t rej">excluded <b id="nRej">0</b></span>
+      <span class="t">usable <b id="nOk">0</b></span>
+    </div>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" hidden>nothing matches these filters</div>
+  <div class="legend" id="legend"></div>
+</div>
+<script>
+const DATA=/*__DATA__*/;
+const ROWS=DATA.rows;
+const BYID=new Map(ROWS.map(r=>[r.id,r]));
+let rejects=new Set(), db=null, cells=new Map();
+const $=i=>document.getElementById(i);
+const uniq=k=>[...new Set(ROWS.map(r=>r[k]).filter(v=>v!==null))].sort();
+function opts(el,list,first){el.innerHTML=[`<option value="">${first}</option>`].concat(list.map(v=>`<option>${v}</option>`)).join("");}
+opts($("fMode"),uniq("m"),"all modes");
+opts($("fId"),uniq("s"),"all 50 identities");
+$("fBox").innerHTML=`<option value="">all boxes</option><option value="orig">precomputed (frames/)</option><option value="dyaug">newly detected (dy-aug)</option><option value="none">no detection</option>`;
+$("fShow").innerHTML=`<option value="">everything</option><option value="rej">excluded only</option><option value="ok">kept only</option><option value="low">confidence &lt; 0.6</option><option value="big">crop &gt; 90% (barely crops)</option>`;
+$("fSort").innerHTML=`<option value="conf">confidence ascending</option><option value="i">dataset order</option><option value="cf">crop size ascending</option>`;
+
+function filtered(){
+  const b=$("fBox").value,m=$("fMode").value,id=$("fId").value,sh=$("fShow").value;
+  let out=ROWS.filter(r=>{
+    if(b==="none"?r.hb!==null:(b&&r.hb!==b)) return false;
+    if(m&&r.m!==m) return false;
+    if(id&&r.s!==id) return false;
+    if(sh==="rej"&&!rejects.has(r.id)) return false;
+    if(sh==="ok"&&rejects.has(r.id)) return false;
+    if(sh==="low"&&!(r.conf!==null&&r.conf<0.6)) return false;
+    if(sh==="big"&&!(r.cf!==null&&r.cf>0.9)) return false;
+    return true;
+  });
+  const k=$("fSort").value;
+  if(k==="conf") out=[...out].sort((a,b2)=>(a.conf??2)-(b2.conf??2));
+  else if(k==="cf") out=[...out].sort((a,b2)=>(a.cf??2)-(b2.cf??2));
+  return out;
+}
+function cardHTML(r){
+  const tag=r.hb===null?`<span class="tag" style="background:var(--accent2)">NO BOX</span>`
+    :(r.hb==="dyaug"?`<span class="tag">NEW${r.conf!==null?" "+r.conf.toFixed(2):""}</span>`:``);
+  return `<button class="card${r.hb===null?' nobox':''}" data-id="${r.id}" aria-pressed="false">`+
+    `<img src="data:image/jpeg;base64,${r.im}" alt="${r.id}" loading="lazy">${tag}`+
+    `<div class="cc"><div class="num">${r.cf!==null?`crop ${(r.cf*100).toFixed(0)}%`:'no crop possible'}${r.nd&&r.nd>1?` · ${r.nd} heads`:''}</div>`+
+    `<div class="who">${r.m} · ${r.s.replace('shhq_image_','')}</div></div></button>`;
+}
+function paint(){
+  cells.forEach((el,id)=>{
+    const on=rejects.has(id);
+    el.classList.toggle("rej",on); el.setAttribute("aria-pressed",String(on));
+  });
+  const vis=[...cells.keys()];
+  $("nShow").textContent=vis.length;
+  $("nRej").textContent=rejects.size;
+  $("nOk").textContent=ROWS.length-rejects.size;
+}
+function render(){
+  const rs=filtered();
+  $("empty").hidden=rs.length>0;
+  $("grid").innerHTML=rs.map(cardHTML).join("");
+  cells=new Map([...$("grid").children].map(el=>[el.dataset.id,el]));
+  paint();
+}
+$("grid").onclick=async e=>{
+  const c=e.target.closest(".card"); if(!c) return;
+  const id=c.dataset.id;
+  if(!db){ return; }
+  const was=rejects.has(id);
+  was?rejects.delete(id):rejects.add(id);   // optimistic
+  paint();
+  try{
+    const ref=db.collection("rejects").doc(id);
+    if(was) await ref.delete(); else await ref.set({at:new Date().toISOString(),mode:BYID.get(id).m});
+  }catch(err){
+    was?rejects.add(id):rejects.delete(id); paint();
+    $("status").textContent="save failed — "+(err&&err.code||"error");
+    $("status").className="status ro";
+  }
+};
+["fBox","fMode","fId","fShow","fSort"].forEach(i=>$(i).onchange=render);
+$("legend").innerHTML=`<span class="sw" style="background:#54d38a"></span>head box (YOLOv8-head, in the 512 pad-to-square training space) &nbsp;&nbsp;`+
+  `<span class="sw" style="background:#f6b74a"></span>representative k=${DATA.k} crop, median scale &nbsp;&nbsp;`+
+  `<span class="sw" style="border:1px dashed #f6b74a;background:transparent"></span>no detection — this frame falls back to the full frame<br>`+
+  `${DATA.n} frames from <code>${DATA.csv}</code>. The drawn crop is the median of the valid range; training samples it randomly and keeps 35% of frames uncropped.`;
+render();
+(async()=>{
+  const st=$("status");
+  try{
+    db=await window.claude?.use?.("db");
+  }catch(e){ db=null; }
+  if(!db){ st.textContent="read-only — exclusions cannot be saved here"; st.className="status ro"; return; }
+  st.textContent="saving exclusions"; st.className="status live";
+  db.collection("rejects").onSnapshot(
+    snap=>{ rejects=new Set(snap.docs.filter(d=>d.exists).map(d=>d.id)); paint(); },
+    err=>{ st.textContent="sync stopped — "+(err.code||"error"); st.className="status ro"; }
+  );
+})();
+</script>

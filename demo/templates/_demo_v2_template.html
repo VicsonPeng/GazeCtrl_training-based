@@ -1,0 +1,263 @@
+<title>GazeCtrl 360</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#f4f6f9; --panel:#ffffff; --panel2:#eef1f6; --line:#dbe1ea;
+  --ink:#14202e; --mut:#5a6675; --dim:#8b96a5;
+  --accent:#1f7fb8; --accent2:#c07a12; --good:#2f9e63; --warn:#c07a12; --crit:#c0453a;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1015; --panel:#141a23; --panel2:#1b2330; --line:#28313f;
+  --ink:#e9edf4; --mut:#8a94a6; --dim:#5b6575;
+  --accent:#46b4e6; --accent2:#f6b74a; --good:#54d38a; --warn:#f6b74a; --crit:#e8836f;
+}}
+:root[data-theme="dark"]{
+  --bg:#0d1015; --panel:#141a23; --panel2:#1b2330; --line:#28313f;
+  --ink:#e9edf4; --mut:#8a94a6; --dim:#5b6575;
+  --accent:#46b4e6; --accent2:#f6b74a; --good:#54d38a; --warn:#f6b74a; --crit:#e8836f;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5}
+.wrap{max-width:1320px;margin:0 auto;padding-block:22px 60px;padding-left:18px;padding-right:18px}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}
+h1{font-size:30px;font-weight:700;margin:0;letter-spacing:-.02em;text-wrap:balance}
+.sub{color:var(--mut);margin:6px 0 0;max-width:68ch}
+.meta{font-family:var(--mono);font-size:11.5px;color:var(--dim);margin-top:10px;display:flex;gap:16px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.meta b{color:var(--mut);font-weight:500}
+.ckbtn{font-family:var(--mono);font-size:11px;background:var(--panel2);color:var(--mut);border:1px solid var(--line);
+  border-radius:6px;padding:2px 8px;margin-left:4px;cursor:pointer;font-variant-numeric:tabular-nums}
+.ckbtn:hover{border-color:var(--accent)}
+.ckbtn.on{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:600}
+.ckbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.stage{display:grid;grid-template-columns:104px 1fr 300px;gap:16px;margin-top:22px;align-items:start}
+@media (max-width:1060px){.stage{grid-template-columns:1fr}}
+.rail{display:flex;flex-direction:column;gap:10px;position:sticky;top:env(safe-area-inset-top,0px)}
+@media (max-width:1060px){.rail{position:static;flex-direction:row;overflow-x:auto;padding-bottom:4px}}
+.grp{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:6px 0 -2px}
+@media (max-width:1060px){.grp{display:none}}
+.gset{display:flex;flex-direction:column;gap:6px}
+@media (max-width:1060px){.gset{flex-direction:row;gap:6px}}
+.thumb{border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer;background:var(--panel);padding:0;flex:0 0 auto;position:relative;display:block;width:100%}
+@media (max-width:1060px){.thumb{width:76px}}
+.thumb img{width:100%;display:block;aspect-ratio:1;object-fit:cover;background:#000;max-width:100%}
+.thumb.sel{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 40%,transparent)}
+.thumb:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pbadge{position:absolute;left:3px;bottom:3px;font-family:var(--mono);font-size:8.5px;font-weight:600;background:rgba(0,0,0,.66);color:#fff;padding:1px 4px;border-radius:4px;letter-spacing:.04em;text-transform:uppercase}
+.view{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.trio{display:grid;grid-template-columns:1fr auto 1.3fr auto 1fr;gap:12px;align-items:start}
+@media (max-width:760px){.trio{grid-template-columns:1fr;gap:10px}}
+.frame{border-radius:12px;overflow:hidden;background:#000;border:1px solid var(--line)}
+.frame img{width:100%;display:block;aspect-ratio:1;object-fit:cover;max-width:100%}
+.frame.faded img{opacity:.34;filter:saturate(.3)}
+.frame.empty{aspect-ratio:1;display:grid;place-items:center;background:var(--panel2);border-style:dashed}
+.frame.empty span{font-family:var(--mono);font-size:10.5px;color:var(--dim);text-align:center;padding:0 10px;line-height:1.6}
+.slot h3{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);margin:0 0 7px;font-weight:600}
+.slot h3 em{font-style:normal;color:var(--dim);letter-spacing:.04em;text-transform:none}
+.cap{font-family:var(--mono);font-size:10.5px;color:var(--mut);margin:7px 1px 0;line-height:1.65;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.cap .k{color:var(--dim)}
+.arrow{color:var(--accent);font-size:20px;text-align:center;align-self:center;padding-top:14px}
+@media (max-width:760px){.arrow{transform:rotate(90deg);padding-top:0}}
+.dbar{margin-top:14px;border-top:1px solid var(--line);padding-top:12px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;font-family:var(--mono);font-size:11.5px;font-variant-numeric:tabular-nums}
+.dbar .lbl{color:var(--dim);letter-spacing:.1em;text-transform:uppercase;font-size:9.5px}
+.dval{font-size:19px;font-weight:600}
+.pill{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:999px;border:1px solid currentColor;letter-spacing:.04em}
+.ctrl{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.ctrl h2{font-size:12px;font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mut);margin:0;font-weight:600}
+.pad{display:grid;gap:5px}
+.padrow{display:grid;grid-template-columns:34px repeat(8,1fr);gap:5px;align-items:center}
+.rowlab,.collab{font-family:var(--mono);font-size:10px;color:var(--dim);text-align:center}
+.colhead{display:grid;grid-template-columns:34px repeat(8,1fr);gap:5px}
+.cell{aspect-ratio:1;border-radius:6px;border:1px solid var(--line);cursor:pointer;padding:0;position:relative;transition:transform .08s}
+.cell:hover{transform:scale(1.08)}
+.cell:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+.cell.on{box-shadow:0 0 0 2px var(--ink),0 0 0 4px var(--accent);z-index:1}
+.cell.hard::after{content:"";position:absolute;inset:1px;border-radius:4px;border:1.5px dashed rgba(255,255,255,.92);mix-blend-mode:difference}
+.readout{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;gap:12px;align-items:center}
+.swatch{width:52px;height:52px;border-radius:9px;border:1px solid var(--line);flex:0 0 auto}
+.vec{font-family:var(--mono);font-size:12px;line-height:1.7;font-variant-numeric:tabular-nums}
+.vec .k{color:var(--dim)} .vec .r{color:var(--crit)} .vec .g{color:var(--good)} .vec .b{color:var(--accent)}
+.btns{display:flex;gap:8px}
+button.act{flex:1;font-family:var(--mono);font-size:12px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:9px;padding:9px;cursor:pointer;font-weight:500}
+button.act:hover{border-color:var(--accent)}
+button.act.playing{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.note{font-family:var(--mono);font-size:10.5px;color:var(--dim);line-height:1.6}
+.foot{color:var(--dim);font-size:11.5px;font-family:var(--mono);margin-top:20px;border-top:1px solid var(--line);padding-top:12px;line-height:1.7}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<div class="wrap">
+  <p class="eyebrow">Interactive Demo · Gaze-Conditioned Reorientation</p>
+  <h1>GazeCtrl</h1>
+  <p class="sub">One person image plus a target gaze vector; the model reorients the <em>same</em> identity over the full 360°, back-facing included. Sources are no longer only frontal — each identity contributes a <b>front</b>, a <b>side</b> and a <b>back</b> source frame, so you can watch what happens when the target gaze sits far from where the person already looks and the whole body has to follow. The right-hand panel pulls the real labelled frame of that same person whose gaze is closest to the condition, as a reference for what the answer should look like.</p>
+  <div class="meta" id="meta"></div>
+
+  <div class="stage">
+    <div class="rail" id="rail"></div>
+    <div class="view">
+      <div class="trio">
+        <div class="slot">
+          <h3>Source <em id="srcPose"></em></h3>
+          <div class="frame"><img id="srcImg" alt="source frame"></div>
+          <div class="cap" id="srcCap"></div>
+        </div>
+        <div class="arrow">▸</div>
+        <div class="slot">
+          <h3>Output <em>generated</em></h3>
+          <div class="frame"><img id="outImg" alt="generated output"></div>
+          <div class="cap" id="outCap"></div>
+        </div>
+        <div class="arrow" style="color:var(--dim)">≟</div>
+        <div class="slot">
+          <h3>GT reference <em>nearest real frame</em></h3>
+          <div class="frame" id="gtFrame"><img id="gtImg" alt="nearest ground-truth frame"></div>
+          <div class="cap" id="gtCap"></div>
+        </div>
+      </div>
+      <div class="dbar">
+        <span class="lbl">rotation demanded</span>
+        <span class="dval" id="dDelta">—</span>
+        <span id="dPill"></span>
+        <span class="note" id="dNote"></span>
+      </div>
+    </div>
+    <div class="ctrl">
+      <h2>Target gaze</h2>
+      <div class="colhead" id="colhead"></div>
+      <div class="pad" id="pad"></div>
+      <div class="readout">
+        <div class="swatch" id="swatch"></div>
+        <div class="vec" id="vec"></div>
+      </div>
+      <div class="btns">
+        <button class="act" id="sweepBtn">▶ Sweep yaw</button>
+        <button class="act" id="resetBtn">Reset ▪ front</button>
+      </div>
+      <div class="note">
+        condition = flat RGB map, R=d<sub>x</sub> G=d<sub>y</sub> B=d<sub>z</sub>. Pad tiles show the exact colour fed to the ControlNet.<br>
+        <span style="border:1.5px dashed currentColor;padding:0 3px;border-radius:3px">dashed</span> tiles demand &gt;90° of rotation from this source — the cases needing real full-body adjustment.
+      </div>
+    </div>
+  </div>
+  <div class="foot" id="foot"></div>
+</div>
+<script>
+const BUNDLE=/*__DATA__*/;
+const YAWS=BUNDLE.yaws, PITCHES=BUNDLE.pitches, GAL=BUNDLE.galleries||{};
+let CK=0, DATA=BUNDLE.sets[CK];
+const TAGLAB={"train-id":"in training","held-out-id":"held out","unseen-id":"unseen id","unseen-domain":"unseen domain (SHHQ)"};
+const TAGORDER=["train-id","held-out-id","unseen-id","unseen-domain"];
+const POSECOL={front:"var(--good)",side:"var(--accent)",back:"var(--accent2)"};
+let sel=0, yaw=0, pit=0, timer=null;
+const $=id=>document.getElementById(id);
+const rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
+function gz(y,p){const a=rad(y),b=rad(p);return [Math.sin(a)*Math.cos(b),Math.sin(b),Math.cos(a)*Math.cos(b)];}
+function nrm(v){const n=Math.hypot(v[0],v[1],v[2])||1;return [v[0]/n,v[1]/n,v[2]/n];}
+function angBetween(u,v){u=nrm(u);v=nrm(v);return deg(Math.acos(Math.max(-1,Math.min(1,u[0]*v[0]+u[1]*v[1]+u[2]*v[2]))));}
+function col(y,p){const [dx,dy,dz]=nrm(gz(y,p));
+  return `rgb(${Math.round((dx+1)/2*255)},${Math.round((dy+1)/2*255)},${Math.round((dz+1)/2*255)})`;}
+const ylab=y=>Math.abs(y)>=180?"back":`${y>0?'+':''}${y}°`;
+const plab=p=>p>0?"Up":(p<0?"Down":"Level");
+const yawOf=g=>deg(Math.atan2(g[0],g[2])), pitOf=g=>deg(Math.asin(Math.max(-1,Math.min(1,nrm(g)[1]))));
+
+function buildRail(){
+  const byTag={};
+  DATA.sources.forEach((s,i)=>{(byTag[s.tag]=byTag[s.tag]||[]).push([s,i]);});
+  $("rail").innerHTML=TAGORDER.filter(t=>byTag[t]).map(t=>
+    `<p class="grp">${TAGLAB[t]||t}</p><div class="gset">`+
+    byTag[t].map(([s,i])=>
+      `<button class="thumb ${i===sel?'sel':''}" onclick="pick(${i})" title="${s.id}" aria-label="${s.pose} source, ${TAGLAB[s.tag]||s.tag}">`+
+      `<img src="${s.src}" alt="${s.pose} source frame"><span class="pbadge" style="color:${POSECOL[s.pose]||'#fff'}">${s.pose}</span></button>`
+    ).join("")+`</div>`).join("");
+}
+function buildPad(){
+  $("colhead").innerHTML=`<span></span>`+YAWS.map(y=>`<span class="collab">${ylab(y)}</span>`).join("");
+  $("pad").innerHTML=PITCHES.map(p=>
+    `<div class="padrow"><span class="rowlab">${plab(p)}</span>`+
+    YAWS.map(y=>`<button class="cell" data-y="${y}" data-p="${p}" style="background:${col(y,p)}" onclick="setGz(${y},${p})" title="yaw ${y}° pitch ${p}°" aria-label="target yaw ${y} pitch ${p}"></button>`).join("")+
+    `</div>`).join("");
+}
+function markCells(){
+  const s=DATA.sources[sel], sg=s.gt;
+  document.querySelectorAll(".cell").forEach(c=>{
+    const y=+c.dataset.y, p=+c.dataset.p;
+    c.classList.toggle("on", y===yaw && p===pit);
+    c.classList.toggle("hard", !!sg && angBetween(sg, gz(y,p))>90);
+  });
+}
+function nearestGT(ident,target){
+  const g=GAL[ident]; if(!g||!g.length) return null;
+  let best=null;
+  for(const f of g){const d=angBetween(f.gz,target); if(!best||d<best.d) best={d,f};}
+  return best;
+}
+function render(){
+  const s=DATA.sources[sel], target=nrm(gz(yaw,pit));
+  $("srcImg").src=s.src;
+  $("srcPose").textContent=`${s.pose} · ${TAGLAB[s.tag]||s.tag}`;
+  $("srcCap").innerHTML=s.gt
+    ? `<span class="k">id</span> ${s.id}<br><span class="k">labelled gaze</span> yaw ${yawOf(s.gt).toFixed(0)}° · pitch ${pitOf(s.gt).toFixed(0)}° <span class="k">(${s.lab})</span>`
+    : `<span class="k">id</span> ${s.id}<br><span class="k">no gaze label</span> (single crop, no turnaround frames)`;
+  $("outImg").src=s.outs[`${yaw}_${pit}`];
+  const [dx,dy,dz]=target;
+  $("outCap").innerHTML=`<span class="k">condition</span> yaw ${ylab(yaw)} · ${plab(pit)}<br>`+
+    `<span class="k">d</span> (${dx.toFixed(2)}, ${dy.toFixed(2)}, ${dz.toFixed(2)})`;
+
+  const nb=s.gt?nearestGT(s.ident,target):null;
+  const gf=$("gtFrame");
+  if(nb){
+    gf.className="frame"+(nb.d>35?" faded":"");
+    gf.innerHTML=`<img id="gtImg" src="${nb.f.img}" alt="nearest ground-truth frame">`;
+    $("gtCap").innerHTML=`<span class="k">Δ to condition</span> <b style="color:${nb.d>35?'var(--warn)':'var(--good)'}">${nb.d.toFixed(0)}°</b>`+
+      (nb.d>35?` <span class="k">— no close GT for this id</span>`:``)+
+      `<br><span class="k">frame</span> ${nb.f.fid} <span class="k">(${nb.f.lab})</span>`;
+  }else{
+    gf.className="frame empty";
+    gf.innerHTML=`<span>no GT frames<br>for this source</span>`;
+    $("gtCap").innerHTML=`<span class="k">single crop — this identity has no labelled turnaround frames, so there is nothing to compare against.</span>`;
+  }
+
+  if(s.gt){
+    const d=angBetween(s.gt,target);
+    $("dDelta").textContent=`${d.toFixed(0)}°`;
+    $("dDelta").style.color = d>90?"var(--accent2)":"var(--ink)";
+    const hard=d>120?["crit","full turn — body must reorient"]:d>90?["warn","large — body must follow"]:d>45?["accent","moderate"]:["dim","small — head-only suffices"];
+    $("dPill").innerHTML=`<span class="pill" style="color:var(--${hard[0]})">${hard[1]}</span>`;
+    $("dNote").textContent=`angle between the source's labelled gaze and the target condition`;
+  }else{
+    $("dDelta").textContent="—"; $("dDelta").style.color="var(--dim)";
+    $("dPill").innerHTML=""; $("dNote").textContent="source has no gaze label, so the demanded rotation is unknown";
+  }
+  $("swatch").style.background=col(yaw,pit);
+  const facing = dz>0.25?"toward camera":(dz<-0.25?"facing away":"profile");
+  $("vec").innerHTML=`<span class="k">yaw</span> ${ylab(yaw)} <span class="k">·</span> <span class="k">${plab(pit)}</span> <span class="k">(${facing})</span><br>`+
+    `<span class="r">d<sub>x</sub> ${dx.toFixed(2)}</span> <span class="g">d<sub>y</sub> ${dy.toFixed(2)}</span> <span class="b">d<sub>z</sub> ${dz.toFixed(2)}</span>`;
+  markCells();
+}
+function pick(i){sel=i;buildRail();render();}
+function setGz(y,p){yaw=y;pit=p;stop();render();}
+function stop(){if(timer){clearInterval(timer);timer=null;$("sweepBtn").classList.remove("playing");$("sweepBtn").textContent="▶ Sweep yaw";}}
+$("sweepBtn").onclick=()=>{
+  if(timer){stop();return;}
+  $("sweepBtn").classList.add("playing");$("sweepBtn").textContent="⏸ Sweeping";
+  let i=YAWS.indexOf(yaw); if(i<0)i=4;
+  timer=setInterval(()=>{i=(i+1)%YAWS.length;yaw=YAWS[i];render();},650);
+};
+$("resetBtn").onclick=()=>{stop();yaw=0;pit=0;render();};
+const nGal=Object.keys(GAL).length, nFr=Object.values(GAL).reduce((a,v)=>a+v.length,0);
+function renderMeta(){
+  const sw=BUNDLE.sets.length<2?`<span><b>checkpoint</b> ${DATA.ckpt}</span>`
+    :`<span><b>checkpoint</b> `+BUNDLE.sets.map((d,i)=>
+       `<button type="button" class="ckbtn${i===CK?' on':''}" onclick="setCk(${i})">${d.ckpt.replace('cn_step','')}</button>`).join("")+`</span>`;
+  $("meta").innerHTML=sw+`<span><b>backbone</b> Qwen-Image-Edit-2509 fp8 (frozen)</span>`+
+    `<span><b>control</b> InstantX ControlNet Union · RGB gaze map</span>`+
+    `<span><b>cn_scale</b> ${DATA.cn_scale} · <b>steps</b> ${DATA.steps} · <b>seed</b> ${DATA.seed}</span>`;
+}
+function setCk(i){CK=i; DATA=BUNDLE.sets[i]; renderMeta(); render();}
+renderMeta();
+$("foot").innerHTML=`${DATA.sources.length} sources × ${YAWS.length*PITCHES.length} gaze targets = ${DATA.sources.length*YAWS.length*PITCHES.length} real inferences · full 360° yaw incl. back-facing · flow matching, ${DATA.steps} steps, seed ${DATA.seed}, cn_scale ${DATA.cn_scale}.<br>`+
+  `GT reference drawn from ${nFr} labelled frames across ${nGal} identities; label provenance shown per frame (<b>manual</b> = human-labelled, <b>3dgaze</b>/<b>6drep</b> = automatic). Held-out identities are labelled automatically only.`;
+buildRail();buildPad();render();
+</script>

@@ -1,0 +1,21 @@
+# Versions this project was actually trained and evaluated with (Python 3.10.20).
+# torch is installed separately so you can match your own CUDA build:
+#   pip install torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cu124
+
+safetensors==0.8.0rc0
+numpy==2.2.6
+pandas==2.3.3
+Pillow==12.2.0
+opencv-python==4.11.0.86
+einops==0.7.0
+scipy==1.15.3
+huggingface_hub==0.34.3
+
+# measurement instruments (never trained here)
+ultralytics==8.4.68        # YOLOv8 head detector -> head boxes
+lpips==0.1.4               # cross-gaze output spread
+insightface==1.0.1         # ArcFace buffalo_l -> identity similarity
+onnxruntime-gpu==1.23.2    # insightface backend
+
+# only needed for the interactive demo (demo/app.py)
+# gradio==4.44.1

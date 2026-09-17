@@ -1,0 +1,29 @@
+# weights — fetched with setup/download_models.py, never committed
+models/
+*.safetensors
+*.pth
+*.pt
+*.onnx
+
+# run artefacts
+runs/
+*.log
+loss.csv
+metrics_train.csv
+
+# generated datasets and figures
+gaze_dataset/
+condition_dataset_v2/
+outputs/
+*.mp4
+
+# generated demo payloads (large base64 bundles)
+demo/*_data.json
+demo/*.html
+!demo/templates/*.html
+
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.DS_Store
+.venv/
