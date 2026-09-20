@@ -82,12 +82,44 @@ Read these honestly:
   vector. Head pose and gaze differ by construction — median 26.7° between 3DGazeNet and
   6DRepNet on the same frame — so a floor of that order is expected.
 
-### Curriculum (in progress)
+### A metric defect that invalidated four runs
 
-Stage 1 pretrains on SHHQ full-body turnaround pairs with a head-preserving random crop,
-mixed 80/20 with the close-up HITL pairs, to learn the head-pose ↔ full-body relation before
-stage 2 sharpens eye gaze on the human-labelled data. See
-[`train/train_stage1.py`](train/train_stage1.py).
+`ctrl_slope` polyfits raw `atan2` degrees with no unwrapping, so a target near ±180° can be
+measured as −178° for a head physically 7° away — enough to drag a perfect +1.000 fit to
+−0.349. 92 % of the SHHQ identities carry such a pick (SHHQ is 30 % back-facing) against
+31 % of the HITL ones. **Four SHHQ runs spanning 60 000 steps all logged `ctrl_slope ≈ 0`
+while the checkpoints in fact track the condition at +1.25.** The wrap-safe fit is in
+[`eval/eval_true_v3.py`](eval/eval_true_v3.py) and
+[`train/train_stage2.py`](train/train_stage2.py); see
+[`docs/conventions.md`](docs/conventions.md). `gaze_err` was never affected.
+
+### Curriculum
+
+**Stage 1** ([`train/train_stage1.py`](train/train_stage1.py)) pretrains on SHHQ full-body
+turnaround pairs with a head-preserving random crop, mixed 80/20 with the close-up HITL
+pairs, to learn the head-pose ↔ full-body relation. 35 000 steps from the InstantX weights.
+
+**Stage 2** ([`train/train_stage2.py`](train/train_stage2.py)) inverts the mix — the full
+HITL pool at 70 %, SHHQ kept at 30 % as replay so full-body reorientation does not decay —
+and turns on `eye_boost` (eye boxes exist only for HITL), which is what targets "head pose
+right, pupils wrong". 50 000 steps from stage 1, so that 35 000 + 50 000 = 85 000 matches
+the HITL-only checkpoint it is compared against. Every eval scores **both** pools, so SHHQ
+decay is visible as it happens.
+
+Stage-1 checkpoint at 35 000 steps, all 50 SHHQ identities × 5 targets, `cn_scale = 1.0`,
+16 steps, seed 0 ([`eval/eval_true_v3.py`](eval/eval_true_v3.py)):
+
+| | stage 1, full frame | stage 1, head crop | HITL 85k, full frame |
+|---|---|---|---|
+| `ctrl_slope` wrap-safe | +1.254 | **+1.098** | +1.143 |
+| `ctrl_slope` raw (broken) | +0.236 | +0.598 | +0.454 |
+| `gaze_err` ↓ | 46.59° | **27.29°** | 35.91° |
+| median \|yaw error\| ↓ | 28.3° | **14.4°** | 20.0° |
+| `id_sim` ↑ | +0.186 | **+0.265** | +0.115 |
+
+The head-crop column is measured over 159/250 generations against 243/250 for the full
+frame — YOLO head detection fails more often on tight crops — so it is the optimistic end of
+the range, not a like-for-like number.
 
 ---
 
@@ -126,13 +158,16 @@ data/preprocess/           3. precompute what training needs
   build_headbox_verify.py        payload for the head-box audit page
 
 train/
-  train_gaze_controlnet.py   baseline / stage-2 trainer
+  train_gaze_controlnet.py   baseline trainer (HITL-only and SHHQ-only runs)
   train_stage1.py            curriculum stage 1: crop augmentation + mixed pools
+  train_stage2.py            curriculum stage 2: HITL-major + SHHQ replay, wrap-safe eval
   run_train_hitl.sh          waits for a free GPU, auto-resumes after a crash
   run_train_stage1.sh
+  run_train_stage2.sh
 
 eval/
   eval_true_v2.py            gaze_err, ctrl_slope, cross_gaze_lpips, id_sim, face_det
+  eval_true_v3.py            wrap-safe ctrl_slope + head-crop mode; dumps picks.csv + images
   full_rotation_v2.py        full 360° sweep → demo payload
   build_srcs_v2.py           pick front/side/back source frames + GT galleries
   crop_preview2.py           sanity-check the crop augmentation visually
@@ -228,6 +263,14 @@ Curriculum stage 1 (crop augmentation, mixed pools, from the InstantX weights):
 
 ```bash
 bash train/run_train_stage1.sh
+```
+
+Then stage 2 — HITL at 70 %, SHHQ kept at 30 % as replay, initialised from the
+stage-1 checkpoint (50 000 steps, so the total matches the 85 000-step HITL-only run it is
+compared against):
+
+```bash
+bash train/run_train_stage2.sh
 ```
 
 Both runners wait for a genuinely free GPU (<1000 MiB, confirmed on two polls 8 s apart),

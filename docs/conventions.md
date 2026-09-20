@@ -109,6 +109,41 @@ A linear fit over the 5 targets of *requested* yaw against *measured* yaw.
 
 This separates "does it obey" from "is the measurement accurate" better than `gaze_err` does.
 
+#### The raw formula is broken near +/-180 deg, and it cost us four training runs
+
+Both yaws come from `atan2`, so they live on a circle, but the fit was linear and did no
+unwrapping. A target at +175 deg whose generated head lands 7 deg away can be measured as
+-178 deg -- 7 deg physically, 353 deg numerically. One such point drags a perfect +1.000 fit
+down to **-0.349**:
+
+```
+req  = [-90, -45, 0, 45, 175]
+meas = [-90, -45, 0, 45, 175]   -> slope = +1.000
+meas = [-90, -45, 0, 45, -178]  -> slope = -0.349     (physical error: 7 deg)
+```
+
+92 % of the SHHQ identities carry at least one pick with `|yaw| > 150 deg` (SHHQ is 30 %
+back-facing frames), against 31 % of the HITL identities. That asymmetry, not a difference
+in what the model learned, is why **four separate SHHQ runs spanning 60 000 steps all logged
+`ctrl_slope ~ 0`** while the same checkpoints measure **+1.25** once the wrap is handled.
+
+The fix, used by `eval/eval_true_v3.py` and `train/train_stage2.py`, fits the measurement
+against its own unwrapped representative:
+
+```python
+def wrap180(a): return (a + 180.0) % 360.0 - 180.0
+slope = np.polyfit(req, req + wrap180(meas - req), 1)[0]
+```
+
+1.0 still means ideal and 0.0 still means "ignores the condition", but a near-180 deg target
+no longer detonates the fit. `eval_true_v3.py` reports `ctrl_slope_RAW` alongside it so the
+new numbers stay comparable to the old training logs, and dumps every
+`(requested_yaw, measured_yaw)` pair to `picks.csv` so any future metric can be recomputed
+offline without a GPU.
+
+**`gaze_err` was never affected** -- it is the 3-D angle between two unit vectors and never
+passes through `atan2`.
+
 ### `cross_gaze_lpips` — **not** an identity metric
 
 Mean pairwise LPIPS between the 5 generations of one identity at different gazes. It
