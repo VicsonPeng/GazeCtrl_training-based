@@ -8,223 +8,236 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
 :root{
-  --ground:#F6F8FA; --surface:#FFFFFF; --sunk:#EDF1F5;
+  --ground:#F4F6F9; --surface:#FFFFFF; --sunk:#E9EEF3;
   --ink:#111820; --muted:#5A6672; --faint:#8A95A2; --line:#D9E0E8;
-  --accent:#12688F; --accent-soft:#E2EFF6;
-  --good:#1C7A5B; --warn:#A7700F; --bad:#AE3446; --none:#93A0AD;
-  --shadow:0 1px 2px rgba(16,26,38,.06),0 4px 14px rgba(16,26,38,.05);
+  --accent:#12688F; --good:#1C7A5B; --warn:#A7700F; --bad:#AE3446; --none:#93A0AD;
+  --shadow:0 1px 2px rgba(16,26,38,.06),0 6px 22px rgba(16,26,38,.07);
 }
 @media (prefers-color-scheme:dark){:root{
-  --ground:#0D1116; --surface:#151B22; --sunk:#1D242C;
+  --ground:#0B0E13; --surface:#141A21; --sunk:#1C232B;
   --ink:#E4EAF1; --muted:#8E9AA8; --faint:#6B7784; --line:#28313B;
-  --accent:#56B3DC; --accent-soft:#12262F;
-  --good:#46B98C; --warn:#D9A441; --bad:#E2697C; --none:#5C6874;
-  --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 14px rgba(0,0,0,.3);
+  --accent:#56B3DC; --good:#46B98C; --warn:#D9A441; --bad:#E2697C; --none:#5C6874;
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 6px 22px rgba(0,0,0,.4);
 }}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
-body{background:var(--ground);color:var(--ink);font-family:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
-     line-height:1.5;padding:0 16px 64px}
-.wrap{max-width:1180px;margin:0 auto}
+body{background:var(--ground);color:var(--ink);font-family:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;line-height:1.5}
 .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
 a{color:var(--accent)}
-header{padding:48px 0 26px;border-bottom:1px solid var(--line)}
-h1{font-size:2.1rem;font-weight:600;letter-spacing:-.02em;margin:0 0 8px;text-wrap:balance}
-.tag{font-size:1.02rem;color:var(--muted);margin:0 0 18px;max-width:68ch}
-.tag b{color:var(--ink);font-weight:600}
-.links{display:flex;gap:8px;flex-wrap:wrap}
-.links a{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;text-decoration:none;color:var(--ink);
-  background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 13px;font-family:"IBM Plex Mono",monospace}
-.links a:hover{border-color:var(--accent);color:var(--accent)}
-.links a.pri{background:var(--accent);border-color:var(--accent);color:#fff}
-h2{font-size:1.18rem;font-weight:600;margin:38px 0 10px;letter-spacing:-.01em}
-p{max-width:72ch}
-.pipe{font-family:"IBM Plex Mono",monospace;font-size:.74rem;line-height:1.65;background:var(--sunk);
-  border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;color:var(--muted);margin:14px 0}
-.pipe b{color:var(--ink);font-weight:600}
-.pipe .frozen{color:var(--faint)}
-.pipe .tr{color:var(--accent);font-weight:600}
-.note{font-size:.86rem;color:var(--muted);max-width:74ch}
-.note strong{color:var(--ink);font-weight:600}
-
-.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:18px 0 10px}
-.bar .lab{font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:600}
-button{font:inherit;font-size:.74rem;font-family:"IBM Plex Mono",monospace;color:var(--ink);background:var(--surface);
-  border:1px solid var(--line);border-radius:7px;padding:4px 10px;cursor:pointer}
+button{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);
+  border-radius:7px;cursor:pointer;font-family:"IBM Plex Mono",monospace}
 button:hover{border-color:var(--accent)}
 button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
-.spacer{margin-left:auto}
 
-.strip{display:flex;gap:6px;overflow-x:auto;padding:4px 2px 12px;scrollbar-width:thin}
-.thumb{flex:0 0 auto;width:62px;border-radius:7px;overflow:hidden;border:2px solid transparent;cursor:pointer;
-  background:var(--sunk);padding:0;line-height:0}
-.thumb img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block}
+/* ---------- top bar: deliberately thin, the images are the page ---------- */
+.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 18px;
+  border-bottom:1px solid var(--line);background:var(--surface);position:sticky;top:0;z-index:20}
+.brand{font-weight:600;font-size:1.02rem;letter-spacing:-.01em;white-space:nowrap}
+.brand span{color:var(--muted);font-weight:400;font-size:.8rem;margin-left:8px}
+.top .sp{margin-left:auto}
+.top a{font-size:.75rem;text-decoration:none;color:var(--muted);font-family:"IBM Plex Mono",monospace;
+  padding:4px 9px;border:1px solid var(--line);border-radius:7px}
+.top a:hover{color:var(--accent);border-color:var(--accent)}
+
+/* ---------- source strip ---------- */
+.striprow{display:flex;align-items:center;gap:10px;padding:8px 18px;border-bottom:1px solid var(--line)}
+.filters{display:flex;gap:5px;flex-wrap:wrap}
+.filters button{font-size:.7rem;padding:3px 9px}
+.filters button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.strip{display:flex;gap:5px;overflow-x:auto;padding:2px;flex:1;scrollbar-width:thin}
+.thumb{flex:0 0 auto;width:46px;height:46px;border-radius:6px;overflow:hidden;border:2px solid transparent;
+  padding:0;line-height:0;background:var(--sunk)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .thumb[aria-pressed="true"]{border-color:var(--accent)}
 
-.panel{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
-.src{flex:0 0 auto;width:178px;background:var(--surface);border:1px solid var(--line);border-radius:10px;
-  overflow:hidden;box-shadow:var(--shadow)}
-.src img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block}
-.srcm{padding:9px 11px;font-family:"IBM Plex Mono",monospace;font-size:.68rem;color:var(--muted);display:grid;gap:3px}
-.srcm .nm{color:var(--ink);font-weight:600;font-size:.7rem;word-break:break-all;line-height:1.35}
-.srcm .kv{display:flex;justify-content:space-between;gap:8px}
-.srcm .kv b{color:var(--ink);font-weight:600}
+/* ---------- the stage: this is what the page is for ---------- */
+.stage{display:flex;gap:22px;align-items:flex-start;justify-content:center;
+  padding:22px 18px 8px;flex-wrap:wrap}
+.viewer{position:relative;flex:0 1 auto}
+.viewer .main{display:block;width:min(88vw, 78vh, 760px);height:min(88vw, 78vh, 760px);
+  object-fit:cover;border-radius:12px;background:var(--sunk);box-shadow:var(--shadow)}
+.viewer .ref{position:absolute;right:10px;bottom:10px;width:19%;max-width:128px;border-radius:8px;
+  border:2px solid var(--surface);box-shadow:0 4px 14px rgba(0,0,0,.35);display:block;background:var(--sunk)}
+.reflab{position:absolute;right:10px;bottom:10px;font-family:"IBM Plex Mono",monospace;font-size:.58rem;
+  color:#fff;background:rgba(10,14,20,.72);padding:1px 5px;border-radius:0 0 6px 0;pointer-events:none}
+.side{flex:0 0 auto;width:330px;max-width:100%;display:flex;flex-direction:column;gap:14px}
+.readout{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+  box-shadow:var(--shadow);font-family:"IBM Plex Mono",monospace;font-size:.78rem}
+.readout .big{font-size:1.24rem;font-weight:600;letter-spacing:-.01em;margin-bottom:8px;color:var(--ink)}
+.readout .kv{display:flex;justify-content:space-between;gap:10px;color:var(--muted);padding:2px 0}
+.readout .kv b{color:var(--ink);font-weight:600}
+.readout .kv b.g{color:var(--good)}.readout .kv b.w{color:var(--warn)}.readout .kv b.b{color:var(--bad)}
+.readout .kv b.n{color:var(--none);font-weight:400}
+.readout .who{color:var(--faint);font-size:.68rem;margin-top:8px;word-break:break-all;line-height:1.4}
 
-.scroll{flex:1 1 600px;min-width:0;overflow-x:auto;padding-bottom:6px}
-.grid{display:grid;grid-template-columns:36px repeat(12,minmax(78px,1fr));gap:3px;min-width:1010px}
-.hd{font-family:"IBM Plex Mono",monospace;font-size:.65rem;color:var(--muted);text-align:center;padding:3px 0;
-  background:var(--sunk);border-radius:4px}
-.hd.corner{background:transparent}
-.rl{font-family:"IBM Plex Mono",monospace;font-size:.64rem;color:var(--muted);display:grid;place-items:center;
-  background:var(--sunk);border-radius:4px}
-.cell{position:relative;border-radius:4px;overflow:hidden;background:var(--sunk);border:1px solid var(--line);
-  cursor:zoom-in;padding:0;display:block;width:100%}
-.cell img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block}
-.sev{height:3px;background:var(--none)}
-.sev.g{background:var(--good)}.sev.w{background:var(--warn)}.sev.b{background:var(--bad)}
-.cap{font-family:"IBM Plex Mono",monospace;font-size:.59rem;color:var(--muted);padding:2px 4px 3px;
-  display:flex;justify-content:space-between;gap:3px}
-.cap b{font-weight:600}.cap b.g{color:var(--good)}.cap b.w{color:var(--warn)}.cap b.b{color:var(--bad)}
-.cap b.n{color:var(--none);font-weight:400}
-body.clean .cap,body.clean .sev{display:none}
+.picker{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;box-shadow:var(--shadow)}
+.picker h3{margin:0 0 3px;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:600}
+.picker .hint{font-size:.68rem;color:var(--muted);margin:0 0 9px;font-family:"IBM Plex Mono",monospace}
+.matrix{display:grid;grid-template-columns:26px repeat(12,1fr);gap:2px}
+.mh{font-family:"IBM Plex Mono",monospace;font-size:.5rem;color:var(--faint);text-align:center;line-height:1.1}
+.mr{font-family:"IBM Plex Mono",monospace;font-size:.55rem;color:var(--faint);display:grid;place-items:center}
+.dot{aspect-ratio:1/1;border-radius:3px;border:1px solid transparent;background:var(--none);padding:0;min-width:0}
+.dot.g{background:var(--good)}.dot.w{background:var(--warn)}.dot.b{background:var(--bad)}
+.dot[aria-pressed="true"]{outline:2px solid var(--ink);outline-offset:1px;border-radius:3px}
+.dot:hover{border-color:var(--ink)}
 
-.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface);box-shadow:var(--shadow);margin:12px 0}
-table{border-collapse:collapse;width:100%;min-width:520px;font-size:.82rem}
-th,td{padding:8px 15px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+/* ---------- everything textual, below the fold ---------- */
+.more{max-width:980px;margin:0 auto;padding:10px 18px 70px}
+details{border-top:1px solid var(--line);padding:14px 0}
+summary{cursor:pointer;font-weight:600;font-size:.94rem;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸ ";color:var(--muted)}
+details[open] summary::before{content:"▾ "}
+details .body{padding:10px 0 4px}
+p{max-width:74ch;font-size:.88rem;color:var(--muted)}
+p strong{color:var(--ink);font-weight:600}
+.pipe{font-family:"IBM Plex Mono",monospace;font-size:.72rem;line-height:1.7;background:var(--sunk);
+  border:1px solid var(--line);border-radius:10px;padding:13px 15px;overflow-x:auto;color:var(--muted);margin:10px 0}
+.pipe b{color:var(--ink);font-weight:600}
+.pipe .tr{color:var(--accent);font-weight:600}
+.pipe .fz{color:var(--faint)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface);margin:10px 0}
+table{border-collapse:collapse;width:100%;min-width:500px;font-size:.8rem}
+th,td{padding:7px 14px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
 th:first-child,td:first-child{text-align:left}
-thead th{font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--sunk)}
+thead th{font-size:.64rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--sunk)}
 tbody tr:last-child td{border-bottom:none}
 tbody tr.tot td{font-weight:600}
 td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
-
-.legend{display:flex;gap:14px;flex-wrap:wrap;margin:14px 0 0;font-size:.74rem;color:var(--muted);align-items:center}
-.lg{display:flex;gap:5px;align-items:center}
-.lgb{width:16px;height:3px;border-radius:2px;background:var(--none)}
-.lgb.g{background:var(--good)}.lgb.w{background:var(--warn)}.lgb.b{background:var(--bad)}
-
-#lb{position:fixed;inset:0;background:rgba(8,11,15,.86);display:none;place-items:center;z-index:50;padding:20px}
-#lb.on{display:grid}
-#lb .box{background:var(--surface);border-radius:12px;overflow:hidden;max-width:min(560px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.5)}
-#lb img{display:block;width:100%;height:auto;background:var(--sunk)}
-#lb .info{padding:11px 14px;font-family:"IBM Plex Mono",monospace;font-size:.75rem;color:var(--muted);display:grid;gap:3px}
-#lb .info b{color:var(--ink)}
-#lb .cl{position:absolute;top:16px;right:18px;font-size:1.5rem;color:#fff;background:none;border:none;cursor:pointer}
-footer{margin-top:52px;padding-top:20px;border-top:1px solid var(--line);font-size:.8rem;color:var(--muted)}
-@media (max-width:640px){h1{font-size:1.5rem}header{padding:30px 0 20px}}
+.sheet{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;min-width:900px}
+.sheetwrap{overflow-x:auto;padding-bottom:6px}
+.sheet img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:3px;display:block;background:var(--sunk);cursor:pointer}
+footer{border-top:1px solid var(--line);padding:16px 0 0;font-size:.78rem;color:var(--muted)}
+@media (max-width:820px){
+  .side{width:100%}
+  .viewer .main{width:min(92vw,560px);height:min(92vw,560px)}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
-<div class="wrap">
-<header>
-  <h1>GazeCtrl</h1>
-  <p class="tag">Turn a person in a photograph to face any direction — <b>head and body, through the full
-  360°</b> — driven by a single 3-vector. <b>No skeleton, no pose predictor, no text prompt.</b>
-  The gaze vector is the condition.</p>
-  <div class="links">
-    <a class="pri" href="#explore">Browse 1500 generations ↓</a>
-    <a href="https://github.com/VicsonPeng/GazeCtrl_training-based">Code · GitHub</a>
-    <a href="https://huggingface.co/baki0115/gaze-controlnet-qwen-image-edit">Weights · HF</a>
-    <a href="https://huggingface.co/datasets/baki0115/GazeCtrl_dataset">Labels · HF</a>
-  </div>
-</header>
 
-<h2>How it works</h2>
-<div class="pipe">
+<div class="top">
+  <div class="brand">GazeCtrl <span>one photo + one 3-vector → the person turns</span></div>
+  <div class="sp"></div>
+  <a href="https://github.com/VicsonPeng/GazeCtrl_training-based">GitHub</a>
+  <a href="https://huggingface.co/baki0115/gaze-controlnet-qwen-image-edit">Weights</a>
+  <a href="https://huggingface.co/datasets/baki0115/GazeCtrl_dataset">Labels</a>
+  <a href="#about">About ↓</a>
+</div>
+
+<div class="striprow">
+  <div class="filters" id="filters"></div>
+  <div class="strip" id="strip"></div>
+</div>
+
+<div class="stage">
+  <div class="viewer">
+    <img class="main" id="main" alt="generated output">
+    <img class="ref" id="ref" alt="source photograph">
+    <span class="reflab">INPUT</span>
+  </div>
+  <div class="side">
+    <div class="readout" id="readout"></div>
+    <div class="picker">
+      <h3>target direction</h3>
+      <p class="hint">columns = yaw · rows = pitch · arrow keys work</p>
+      <div class="matrix" id="matrix"></div>
+    </div>
+  </div>
+</div>
+
+<div class="more" id="about">
+  <details>
+    <summary>All 60 directions for this person</summary>
+    <div class="body"><div class="sheetwrap"><div class="sheet" id="sheet"></div></div></div>
+  </details>
+
+  <details>
+    <summary>How it works</summary>
+    <div class="body">
+      <div class="pipe">
 target gaze <b>(dx, dy, dz)</b>
   └─▶ flat RGB map &nbsp; R=(dx+1)/2 &nbsp; G=(dy+1)/2 &nbsp; B=(dz+1)/2
         └─▶ VAE encode ──▶ <span class="tr">InstantX ControlNet · TRAINED · 1768M</span>
-                              └─ 5 residuals ─▶ <span class="frozen">Qwen-Image-Edit-2509 · FROZEN</span> ──▶ output
-source photo ────────────────────────────────▶ <span class="frozen">in-context reference token (carries identity)</span>
+                              └─ 5 residuals ─▶ <span class="fz">Qwen-Image-Edit-2509 · FROZEN</span> ──▶ output
+source photo ────────────────────────────────▶ <span class="fz">in-context reference token (carries identity)</span>
 text embedding = <b>zero</b> — every control signal arrives through the ControlNet
-</div>
-<p class="note">The condition is a single flat colour, so it says <em>which way to face</em> and nothing about
-<em>where anything is</em>. That is the point: the claim under test is that a large pretrained editing model
-already holds the head-pose ↔ body-pose prior, and the adapter only has to index it.</p>
+      </div>
+      <p>The condition is a single flat colour, so it says <em>which way to face</em> and nothing about
+      <em>where anything is</em>. That is the point: the claim under test is that a large pretrained editing
+      model already holds the head-pose ↔ body-pose prior, and the adapter only has to index it.
+      No skeleton, no pose predictor, no text prompt.</p>
+      <p><strong>Every image here:</strong> 25 source photographs × 12 yaw × 5 pitch = 1500 generations,
+      one checkpoint (<span class="mono">cn_stage2_step040000</span>) at 1024², <span class="mono">cn_scale
+      1.0</span>, 16 denoising steps, <strong>one fixed seed</strong> — so differences across a grid come from
+      the gaze condition alone. Ten of the sources are photographs the model has never seen.</p>
+    </div>
+  </details>
 
-<h2 id="explore">Explore the outputs</h2>
-<p class="note">25 source photographs × 12 yaw × 5 pitch = <strong>1500 generations</strong>, all from one
-checkpoint at 1024², <span class="mono">cn_scale 1.0</span>, 16 steps, <strong>one fixed seed</strong> — so
-differences across a grid come from the gaze condition alone. Ten of the sources are photographs the model
-has never seen. Click any cell to enlarge.</p>
+  <details>
+    <summary>How well it follows the condition</summary>
+    <div class="body">
+      <div class="tbl"><table>
+        <thead><tr><th>source group</th><th>generations</th><th>median |Δyaw|</th><th>within 30°</th><th>id_sim</th></tr></thead>
+        <tbody id="stats"></tbody>
+      </table></div>
+      <p><strong>Read these with the caveat that the instruments are unreliable.</strong> Direction is measured
+      by a head-pose estimator (6DRepNet360), which disagrees with eye-gaze estimators by a median 26.7° on real
+      photographs; <span class="mono">id_sim</span> is ArcFace cosine, averaged only over generations where a
+      face was detected at all — which excludes the back-facing cases where identity is hardest. Both this model
+      and its alternative sit near ArcFace's own same-person threshold (≈0.28), so <strong>identity preservation
+      is marginal, not solved</strong>. The pictures carry more evidence than the numbers.</p>
+    </div>
+  </details>
 
-<div class="bar" id="bar"></div>
-<div class="strip" id="strip"></div>
-<div class="panel">
-  <div class="src" id="srccard"></div>
-  <div class="scroll"><div class="grid" id="grid"></div></div>
-</div>
-<div class="legend">
-  <span class="lab mono">|Δyaw| between requested and measured</span>
-  <span class="lg"><span class="lgb g"></span>&lt; 20°</span>
-  <span class="lg"><span class="lgb w"></span>20–40°</span>
-  <span class="lg"><span class="lgb b"></span>&gt; 40°</span>
-  <span class="lg"><span class="lgb"></span>no head detected</span>
-</div>
+  <details>
+    <summary>What is honest to say about this</summary>
+    <div class="body">
+      <p>Zero-shot identities degrade but do not collapse. Large rotations are where both direction accuracy and
+      identity are weakest. Supervision is synthetic — turnaround videos generated with Wan2.2 — which holds
+      identity fixed by construction but bakes that generator's artifacts into the targets. Facial detail is
+      dominated by resolution, not by the model: the same weights and seed render an eye across 25 px or 106 px
+      depending only on framing, a finding that arrived after two rounds of loss engineering had already been
+      spent on it. The black bands on some outputs are letterbox from padding portrait photographs to a square
+      canvas; they are left visible rather than cropped away. The
+      <a href="https://github.com/VicsonPeng/GazeCtrl_training-based">repository</a> documents the failures
+      alongside the results.</p>
+    </div>
+  </details>
 
-<h2>How well it follows the condition</h2>
-<div class="tbl"><table>
-  <thead><tr><th>source group</th><th>generations</th><th>median |Δyaw|</th><th>within 30°</th><th>id_sim</th></tr></thead>
-  <tbody id="stats"></tbody>
-</table></div>
-<p class="note"><strong>Read these with the caveat that the instruments are unreliable.</strong> Direction is
-measured by a head-pose estimator (6DRepNet360), which disagrees with eye-gaze estimators by a median 26.7° on
-real photographs; <span class="mono">id_sim</span> is ArcFace cosine, averaged only over generations where a
-face was detected at all — which excludes the back-facing cases where identity is hardest. Both this model and
-its alternative sit near ArcFace's own same-person threshold (≈0.28), so <strong>identity preservation is
-marginal, not solved</strong>. The pictures carry more evidence than the numbers.</p>
-
-<h2>What is honest to say about this</h2>
-<p class="note">Zero-shot identities degrade but do not collapse. Large rotations are where both direction
-accuracy and identity are weakest. Supervision is synthetic — turnaround videos generated with Wan2.2 — which
-holds identity fixed by construction but bakes that generator's artifacts into the targets. Facial detail is
-dominated by resolution, not by the model: the same weights and seed render an eye across 25 px or 106 px
-depending only on framing, a finding that arrived after two rounds of loss engineering had already been spent
-on it. The <a href="https://github.com/VicsonPeng/GazeCtrl_training-based">repository</a> documents the
-failures alongside the results.</p>
-
-<footer>
-  Vicson Peng · Supported by the NSTC Undergraduate Research Grant ·
-  <a href="https://github.com/VicsonPeng/GazeCtrl_training-based">GitHub</a> ·
-  <a href="https://huggingface.co/baki0115/gaze-controlnet-qwen-image-edit">Model</a> ·
-  <a href="https://huggingface.co/datasets/baki0115/GazeCtrl_dataset">Dataset</a>
-</footer>
-</div>
-
-<div id="lb" role="dialog" aria-modal="true" aria-label="enlarged output">
-  <button class="cl" id="lbclose" aria-label="close">×</button>
-  <div class="box"><img id="lbimg" alt=""><div class="info" id="lbinfo"></div></div>
+  <footer>
+    Vicson Peng · Supported by the NSTC Undergraduate Research Grant ·
+    <a href="https://github.com/VicsonPeng/GazeCtrl_training-based">Code</a> ·
+    <a href="https://huggingface.co/baki0115/gaze-controlnet-qwen-image-edit">Model</a> ·
+    <a href="https://huggingface.co/datasets/baki0115/GazeCtrl_dataset">Dataset</a>
+  </footer>
 </div>
 
 <script>
 (function(){
-  var D=null, cur=0;
+  var D=null, cur=0, yi=6, pi=2, flt=null;
   var GL={'shhq/full':'SHHQ full-body (trained)','shhq/crop':'SHHQ head-crop (trained)',
           'hitl':'HITL close-up (trained)','zeroshot':'zero-shot — never seen'};
   function sev(e){ if(e===null||e===undefined) return ''; if(e<20) return 'g'; if(e<=40) return 'w'; return 'b'; }
   function short(s){ return s.replace(/__p\d+$/,'').replace(/^shhq_image_/,'shhq ').replace(/^coco_0*/,'coco ').replace(/^wf_/,'wf '); }
+  function vis(){ return D.ids.map(function(e,i){return i;}).filter(function(i){ return !flt || D.ids[i].g===flt; }); }
 
   fetch('data.json').then(function(r){return r.json();}).then(function(j){ D=j; init(); });
 
   function init(){
-    var bar=document.getElementById('bar');
-    var lab=document.createElement('span'); lab.className='lab'; lab.textContent='source'; bar.appendChild(lab);
-    ['zeroshot','hitl','shhq/crop','shhq/full'].forEach(function(g){
-      var b=document.createElement('button'); b.type='button'; b.dataset.grp=g;
-      b.textContent=g==='zeroshot'?'zero-shot':g;
-      b.addEventListener('click',function(){ filter(g,b); });
-      bar.appendChild(b);
-    });
-    var all=document.createElement('button'); all.type='button'; all.textContent='all'; all.setAttribute('aria-pressed','true');
-    all.addEventListener('click',function(){ filter(null,all); }); bar.insertBefore(all,bar.children[1]);
-    var t=document.createElement('button'); t.type='button'; t.className='spacer'; t.textContent='hide measurements';
-    t.setAttribute('aria-pressed','false');
-    t.addEventListener('click',function(){
-      var on=document.body.classList.toggle('clean');
-      t.textContent=on?'show measurements':'hide measurements'; t.setAttribute('aria-pressed',on?'true':'false');
-    });
-    bar.appendChild(t);
+    var f=document.getElementById('filters');
+    [[null,'all'],['zeroshot','zero-shot'],['hitl','hitl'],['shhq/crop','shhq crop'],['shhq/full','shhq full']]
+      .forEach(function(pair,k){
+        var b=document.createElement('button'); b.type='button'; b.textContent=pair[1];
+        if(k===0) b.setAttribute('aria-pressed','true');
+        b.addEventListener('click',function(){
+          flt=pair[0];
+          Array.prototype.forEach.call(f.children,function(x){ x.setAttribute('aria-pressed', x===b?'true':'false'); });
+          buildStrip(); var v=vis(); if(v.indexOf(cur)<0) show(v[0]); else markStrip();
+        });
+        f.appendChild(b);
+      });
 
     var st=document.getElementById('stats');
     ['zeroshot','hitl','shhq/crop','shhq/full'].forEach(function(g){
@@ -239,30 +252,24 @@ failures alongside the results.</p>
       +'<td class="num">'+o.w30.toFixed(1)+'%</td><td class="num">'+(o.sim>0?'+':'')+o.sim.toFixed(3)+'</td>';
     st.appendChild(tr);
 
-    buildStrip(null); show(0);
-    document.getElementById('lbclose').addEventListener('click',closeLb);
-    document.getElementById('lb').addEventListener('click',function(e){ if(e.target.id==='lb') closeLb(); });
+    buildStrip(); show(0);
     document.addEventListener('keydown',function(e){
-      if(e.key==='Escape') closeLb();
-      if(document.getElementById('lb').classList.contains('on')) return;
-      var vis=visible();
-      if(e.key==='ArrowRight'){ var i=vis.indexOf(cur); show(vis[(i+1)%vis.length]); }
-      if(e.key==='ArrowLeft'){ var i=vis.indexOf(cur); show(vis[(i-1+vis.length)%vis.length]); }
+      if(e.target.tagName==='INPUT') return;
+      var k=e.key, done=true;
+      if(k==='ArrowRight') yi=(yi+1)%12;
+      else if(k==='ArrowLeft') yi=(yi+11)%12;
+      else if(k==='ArrowDown') pi=Math.min(4,pi+1);
+      else if(k==='ArrowUp') pi=Math.max(0,pi-1);
+      else if(k==='['||k===','){ var v=vis(), i=v.indexOf(cur); show(v[(i-1+v.length)%v.length]); return; }
+      else if(k===']'||k==='.'){ var v=vis(), i=v.indexOf(cur); show(v[(i+1)%v.length]); return; }
+      else done=false;
+      if(done){ e.preventDefault(); paint(); }
     });
   }
-  var flt=null;
-  function visible(){ return D.ids.map(function(e,i){return i;}).filter(function(i){ return !flt || D.ids[i].g===flt; }); }
-  function filter(g,btn){
-    flt=g;
-    Array.prototype.forEach.call(document.getElementById('bar').querySelectorAll('button'),function(b){
-      if(b.className==='spacer') return;
-      b.setAttribute('aria-pressed', b===btn ? 'true':'false');
-    });
-    buildStrip(g); var v=visible(); if(v.indexOf(cur)<0) show(v[0]); else markStrip();
-  }
-  function buildStrip(g){
+
+  function buildStrip(){
     var s=document.getElementById('strip'); s.innerHTML='';
-    visible().forEach(function(i){
+    vis().forEach(function(i){
       var e=D.ids[i];
       var b=document.createElement('button'); b.type='button'; b.className='thumb'; b.dataset.i=i;
       b.title=e.s+'  ['+GL[e.g]+']';
@@ -274,45 +281,60 @@ failures alongside the results.</p>
   }
   function markStrip(){
     Array.prototype.forEach.call(document.getElementById('strip').children,function(b){
-      b.setAttribute('aria-pressed', (+b.dataset.i)===cur ? 'true':'false');
+      var on=(+b.dataset.i)===cur; b.setAttribute('aria-pressed', on?'true':'false');
+      if(on) b.scrollIntoView({block:'nearest',inline:'nearest'});
     });
   }
-  function show(i){
-    cur=i; var E=D.ids[i]; markStrip();
-    document.getElementById('srccard').innerHTML=
-      '<img loading="lazy" alt="source photograph" src="img/'+E.s+'__src.jpg">'
-      +'<div class="srcm"><div class="nm">'+short(E.s)+'</div>'
-      +'<div class="kv"><span>group</span><b>'+(GL[E.g]||E.g)+'</b></div>'
-      +'<div class="kv"><span>median |Δyaw|</span><b>'+(E.med===null?'n/a':E.med.toFixed(1)+'°')+'</b></div>'
-      +'<div class="kv"><span>id_sim</span><b>'+(E.sim===null?'n/a':(E.sim>0?'+':'')+E.sim.toFixed(3))+'</b></div></div>';
-    var g=document.getElementById('grid'); g.innerHTML='';
-    var c=document.createElement('div'); c.className='hd corner'; g.appendChild(c);
-    D.yaws.forEach(function(y){ var h=document.createElement('div'); h.className='hd'; h.textContent=(y>0?'+':'')+y+'°'; g.appendChild(h); });
-    D.pitches.forEach(function(p,pi){
-      var r=document.createElement('div'); r.className='rl'; r.textContent=(p>0?'+':'')+p+'°'; g.appendChild(r);
-      D.yaws.forEach(function(y,yi){
-        var m=E.cells[pi][yi], cl=sev(m.ye);
-        var b=document.createElement('button'); b.type='button'; b.className='cell';
-        b.title='requested yaw '+y+'° pitch '+p+'° — click to enlarge';
-        b.innerHTML='<img loading="lazy" alt="yaw '+y+' pitch '+p+'" src="img/'+E.s+'__y'+yi+'_p'+pi+'.jpg">'
-          +'<div class="sev '+cl+'"></div>'
-          +'<div class="cap"><b class="'+(m.ye===null?'n':cl)+'">'+(m.ye===null?'—':'Δ'+m.ye.toFixed(0)+'°')+'</b>'
-          +'<b class="'+(m.sim===null?'n':'')+'">'+(m.sim===null?'—':(m.sim>0?'+':'')+m.sim.toFixed(2))+'</b></div>';
-        b.addEventListener('click',function(){ openLb(E,yi,pi,y,p,m); });
-        g.appendChild(b);
+
+  function show(i){ cur=i; markStrip(); buildMatrix(); buildSheet(); paint(); }
+
+  function buildMatrix(){
+    var E=D.ids[cur], m=document.getElementById('matrix'); m.innerHTML='';
+    var c=document.createElement('div'); m.appendChild(c);
+    D.yaws.forEach(function(y){ var h=document.createElement('div'); h.className='mh'; h.textContent=y; m.appendChild(h); });
+    D.pitches.forEach(function(p,pj){
+      var r=document.createElement('div'); r.className='mr'; r.textContent=(p>0?'+':'')+p; m.appendChild(r);
+      D.yaws.forEach(function(y,yj){
+        var cell=E.cells[pj][yj];
+        var b=document.createElement('button'); b.type='button'; b.className='dot '+sev(cell.ye);
+        b.title='yaw '+y+'° pitch '+p+'°'; b.dataset.y=yj; b.dataset.p=pj;
+        b.addEventListener('click',function(){ yi=yj; pi=pj; paint(); });
+        m.appendChild(b);
       });
     });
   }
-  function openLb(E,yi,pi,y,p,m){
-    document.getElementById('lbimg').src='big/'+E.s+'__y'+yi+'_p'+pi+'.jpg';
-    document.getElementById('lbinfo').innerHTML=
-      '<div><b>requested</b> &nbsp; yaw '+y+'° &nbsp; pitch '+p+'°</div>'
-      +'<div><b>measured</b> &nbsp; '+(m.my===null?'no head detected':'yaw '+m.my+'° &nbsp; pitch '+m.mp+'°')+'</div>'
-      +'<div><b>id_sim</b> &nbsp; '+(m.sim===null?'no face detected':(m.sim>0?'+':'')+m.sim.toFixed(2))+'</div>'
-      +'<div style="color:var(--faint)">'+short(E.s)+' · 1024² · cn_scale 1.0 · 16 steps · seed 0</div>';
-    document.getElementById('lb').classList.add('on');
+
+  function buildSheet(){
+    var E=D.ids[cur], sh=document.getElementById('sheet'); sh.innerHTML='';
+    for(var pj=0;pj<5;pj++) for(var yj=0;yj<12;yj++){
+      (function(yj,pj){
+        var im=document.createElement('img'); im.loading='lazy';
+        im.src='img/'+E.s+'__y'+yj+'_p'+pj+'.jpg';
+        im.alt='yaw '+D.yaws[yj]+' pitch '+D.pitches[pj];
+        im.title='yaw '+D.yaws[yj]+'° pitch '+D.pitches[pj]+'° — click to open above';
+        im.addEventListener('click',function(){ yi=yj; pi=pj; paint(); window.scrollTo({top:0,behavior:'smooth'}); });
+        sh.appendChild(im);
+      })(yj,pj);
+    }
   }
-  function closeLb(){ document.getElementById('lb').classList.remove('on'); }
+
+  function paint(){
+    var E=D.ids[cur], m=E.cells[pi][yi], y=D.yaws[yi], p=D.pitches[pi], cl=sev(m.ye);
+    document.getElementById('main').src='big/'+E.s+'__y'+yi+'_p'+pi+'.jpg';
+    document.getElementById('main').alt='the person turned to yaw '+y+' degrees, pitch '+p+' degrees';
+    document.getElementById('ref').src='img/'+E.s+'__src.jpg';
+    document.getElementById('readout').innerHTML=
+      '<div class="big">yaw '+(y>0?'+':'')+y+'° &nbsp; pitch '+(p>0?'+':'')+p+'°</div>'
+      +'<div class="kv"><span>measured</span><b class="'+(m.my===null?'n':'')+'">'
+        +(m.my===null?'no head found':'yaw '+(m.my>0?'+':'')+m.my+'° · pitch '+(m.mp>0?'+':'')+m.mp+'°')+'</b></div>'
+      +'<div class="kv"><span>|Δyaw|</span><b class="'+(m.ye===null?'n':cl)+'">'+(m.ye===null?'—':m.ye.toFixed(0)+'°')+'</b></div>'
+      +'<div class="kv"><span>id_sim</span><b class="'+(m.sim===null?'n':'')+'">'
+        +(m.sim===null?'no face found':(m.sim>0?'+':'')+m.sim.toFixed(2))+'</b></div>'
+      +'<div class="who">'+short(E.s)+' · '+(GL[E.g]||E.g)+'<br>1024² · cn_scale 1.0 · 16 steps · seed 0</div>';
+    Array.prototype.forEach.call(document.getElementById('matrix').querySelectorAll('.dot'),function(b){
+      b.setAttribute('aria-pressed', (+b.dataset.y===yi && +b.dataset.p===pi) ? 'true':'false');
+    });
+  }
 })();
 </script>
 </body>
