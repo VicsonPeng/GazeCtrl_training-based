@@ -13,6 +13,7 @@ ControlNet reads. That directness is the point of the method.
 
 | | |
 |---|---|
+| **Live demo** | [https://vicsonpeng.github.io/GazeCtrl_training-based/](https://vicsonpeng.github.io/GazeCtrl_training-based/) — browse 1500 generations: 25 sources × 12 yaw × 5 pitch, click any cell |
 | **Weights** | [baki0115/gaze-controlnet-qwen-image-edit](https://huggingface.co/baki0115/gaze-controlnet-qwen-image-edit) — trained ControlNet checkpoints |
 | **Labels** | [baki0115/GazeCtrl_dataset](https://huggingface.co/datasets/baki0115/GazeCtrl_dataset) — the human-curated gaze labels |
 | **Interactive results** | [baki0115/gaze-ctrl-360](https://huggingface.co/spaces/baki0115/gaze-ctrl-360) — 18 sources x 24 gaze targets, with ground-truth reference frames |
