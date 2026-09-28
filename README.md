@@ -17,6 +17,13 @@ ControlNet reads. That directness is the point of the method.
 | **Labels** | [baki0115/GazeCtrl_dataset](https://huggingface.co/datasets/baki0115/GazeCtrl_dataset) — the human-curated gaze labels |
 | **Interactive results** | [baki0115/gaze-ctrl-360](https://huggingface.co/spaces/baki0115/gaze-ctrl-360) — 18 sources x 24 gaze targets, with ground-truth reference frames |
 
+> **Released model: `cn_step040000` from curriculum stage 2.** Selected over the perceptual-loss
+> variant on 3000 generations across 25 sources at 1024². It follows the requested direction more
+> accurately (median |Δyaw| 19.2° vs 25.2°, within-30° 65.5% vs 55.6%, better on 22 of 25 sources);
+> the variant preserves identity slightly better (`id_sim` +0.301 vs +0.264) and ships alongside as
+> a reference checkpoint. See [Model selection](#model-selection).
+
+
 ---
 
 ## Method
@@ -161,13 +168,24 @@ train/
   train_gaze_controlnet.py   baseline trainer (HITL-only and SHHQ-only runs)
   train_stage1.py            curriculum stage 1: crop augmentation + mixed pools
   train_stage2.py            curriculum stage 2: HITL-major + SHHQ replay, wrap-safe eval
+  train_stage3.py            refinement attempt: loss rebalance + sigma shift (NEGATIVE result)
+  train_stage4.py            refinement attempt: LPIPS on the decoded one-step estimate
   run_train_hitl.sh          waits for a free GPU, auto-resumes after a crash
   run_train_stage1.sh
   run_train_stage2.sh
+  run_train_stage3.sh
+  run_train_stage4.sh
 
 eval/
   eval_true_v2.py            gaze_err, ctrl_slope, cross_gaze_lpips, id_sim, face_det
   eval_true_v3.py            wrap-safe ctrl_slope + head-crop mode; dumps picks.csv + images
+  demo_sweep.py              final demo grid: many sources x 60 gaze targets, any resolution
+  run_demo_sweep.sh          sharded runner with GPU claim-locking and resume
+  sweep_grid.py              dense 12 yaw x 5 pitch sweep with per-cell measurement
+  sweep_ckpt_scale.py        checkpoint x cn_scale grid on one photo
+  res_test.py                framing/resolution comparison (512/768, full vs head crop)
+  res_probe.py               512/768/1024 incl. extreme angles; VRAM and timing
+  res_probe_ar.py            square vs native aspect ratio at matched token budgets
   full_rotation_v2.py        full 360° sweep → demo payload
   build_srcs_v2.py           pick front/side/back source frames + GT galleries
   crop_preview2.py           sanity-check the crop augmentation visually
@@ -322,6 +340,61 @@ python demo/build_demo_v2.py                                   # → self-contai
 `demo/app.py` is the Gradio version that takes an uploaded photo.
 
 ---
+
+## Model selection
+
+Two candidates, 3000 generations: 25 sources (SHHQ full-body, SHHQ head-crop, HITL close-up,
+and ten photographs from outside the project) × 12 yaw × 5 pitch × 2 checkpoints, at 1024²,
+`cn_scale=1.0`, 16 steps, one fixed seed.
+
+| source group | checkpoint | median \|Δyaw\| ↓ | within 30° ↑ | `id_sim` ↑ | face det |
+|---|---|---|---|---|---|
+| SHHQ full-body | **stage2-40k** | **23.9°** | **56.1 %** | +0.163 | 127/180 |
+| | stage4-8k | 34.2° | 45.3 % | **+0.219** | **146/180** |
+| SHHQ head-crop | **stage2-40k** | **18.1°** | **66.5 %** | +0.212 | 361/420 |
+| | stage4-8k | 22.6° | 61.0 % | **+0.255** | 361/420 |
+| HITL close-up | **stage2-40k** | **17.7°** | **70.5 %** | +0.278 | 255/300 |
+| | stage4-8k | 25.4° | 54.9 % | **+0.303** | **268/300** |
+| zero-shot | **stage2-40k** | **19.9°** | **65.3 %** | +0.318 | 510/600 |
+| | stage4-8k | 25.6° | 55.6 % | **+0.356** | 511/600 |
+| **all 1500 each** | **stage2-40k** | **19.2°** | **65.5 %** | +0.264 | 1253/1500 |
+| | stage4-8k | 25.2° | 55.6 % | **+0.301** | **1286/1500** |
+
+The trade is consistent — the direction of every comparison is the same in all four regimes.
+`stage2-40k` is released because the project's claim is that the gaze vector *controls* the
+figure, and 6° of median error plus ten points of hit rate are visible where 0.037 of cosine
+similarity is not. Note that **both** sit near ArcFace's own same-person threshold (≈0.28), so
+this is a choice between two marginal models on identity, not between a good one and a better one.
+
+Reproduce with [`eval/demo_sweep.py`](eval/demo_sweep.py) / [`eval/run_demo_sweep.sh`](eval/run_demo_sweep.sh).
+
+## Resolution: the finding that reframed the facial artifacts
+
+Outputs carried oversized flat-black pupils. Two rounds of loss engineering were spent on it —
+rebalancing the head/eye weighting ([`train/train_stage3.py`](train/train_stage3.py), which made
+everything worse) and adding a perceptual LPIPS term on the decoded one-step estimate
+([`train/train_stage4.py`](train/train_stage4.py), a clean trade). The actual cause was
+resolution. Same weights, same seed, same target, changing only framing and generation size:
+
+| mode | eye span | relative | what the eye shows |
+|---|---|---|---|
+| full frame, 512² *(as shipped)* | 25 px | 1.0× | a dark smudge |
+| full frame, 768² | 41 px | 1.6× | iris discernible |
+| head crop, 512² | 68 px | 2.7× | lashes, lid, eyeliner |
+| head crop, 768² | **106 px** | **4.2×** | full eye anatomy |
+
+At 25 px across both eyes a pupil is about five pixels, and a dark smudge is close to the correct
+answer at that scale. **Check that a quantity has room to move before optimising it.**
+
+**Generating above the training resolution is safe here.** The ControlNet saw only a 32×32 patch
+grid, yet control does not degrade at 64×64 (1024²). The reason is attributable to the condition
+design: the gaze map is a *spatially uniform* colour, so the adapter's function is
+position-independent and nothing misaligns when the grid changes. A spatially structured
+condition (depth, skeleton) would not be expected to transfer this way. Non-square grids also run
+correctly — `compute_rope_freqs_3d` and `unpatchify` take separate `h` and `w` — which would remove
+the letterbox waste, but the measured benefit was within noise and it is left unproven.
+Probes: [`eval/res_test.py`](eval/res_test.py), [`eval/res_probe.py`](eval/res_probe.py),
+[`eval/res_probe_ar.py`](eval/res_probe_ar.py).
 
 ## Known limitations
 
