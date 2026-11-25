@@ -45,6 +45,10 @@ ControlNet reads. That directness is the point of the method.
      (VAE-encoded, in-context reference token: this is what carries identity)
 ```
 
+With more than one person in the frame a flat whole-frame condition is ambiguous, so the
+colour is painted inside a box instead — see
+[Multi-person](#multi-person-saying-which-person-the-condition-is-about).
+
 - **Backbone**: `qwen_image_edit_2509_fp8_e4m3fn`, frozen (1933 tensors, `requires_grad=False`).
 - **ControlNet**: InstantX ControlNet Union, initialised from its pretrained weights
   (181/181 keys load) — 1768 M trainable parameters.
@@ -131,6 +135,113 @@ the range, not a like-for-like number.
 
 ---
 
+## Multi-person: saying *which* person the condition is about
+
+A flat gaze map fills the whole frame, so it says "look this way" about the *picture*. With
+one person in frame that is the same thing as saying it about the person. With two it is not,
+and the second person turns as well.
+
+The condition is therefore painted **inside a box** and left neutral grey outside. A box and
+not a mask: a silhouette encodes the pose the person is *currently* in, which is exactly the
+thing the edit has to change, so a mask-shaped condition tells the model the answer it is
+supposed to produce and leaks the source pose into the target.
+
+### The box rule
+
+Three boxes, and a priority between them:
+
+1. **box1(target)** — the target's head box. The final box **must contain it whole**.
+2. **box1(other)** — every other person's head box. The final box **must contain none** of them.
+3. **box2** — the target's own mask bounding box. The final box stays **as close to it as it can**.
+
+Rule 1 wins any conflict with rule 2: a box that has cut off the head of the person it is
+meant to be about cannot be repaired by excluding somebody else.
+[`src/target_head.py`](src/target_head.py) implements it; `headbox_box()` starts from box2
+plus a 5 % pad and cuts one side at a time, ranking candidates by how much of the other
+heads survive first and target coverage second.
+
+Measured over the 186 benchmark pairs
+([`eval/make_evalboxes.py`](eval/make_evalboxes.py)), against the plain mask bounding box:
+
+| | mask bbox | head rule |
+|---|---|---|
+| bystander **body** pixels inside the box | 44.7 % | **10.4 %** |
+| pairs that fully exclude every other head | — | 73.1 % (136/186) |
+| target's head kept whole (of the 177 where a head was detected) | — | **100 %** |
+| target mask covered | — | 98.6 % median |
+| box area, as a share of the frame | 57.4 % | 46.6 % |
+
+The honest caveat: 23.1 % of boxes cover less than 90 % of the target's mask, because
+excluding a neighbour's head sometimes costs a shoulder or an arm. And on 9 of 186 pairs no
+head was detected at all, so rule 1 could not be applied.
+
+### What the box bought
+
+`cn_step006000` of the post-trained run, 166 pairs that both settings share, seed 0,
+4-step Lightning LoRA at scale 1.0, `cn_scale` 1.0, shift 3.0, 768 px, real human gaze
+labels. The two runs differ in the geometry of the condition box and in nothing else.
+
+| | flat whole-frame fill | head-rule box |
+|---|---|---|
+| target gaze error (median) | 30.9° | 30.9° |
+| bystander drift (median) | 13.4° | **8.8°** |
+| bystander moved ≥ 30° | 34.9 % | **30.7 %** |
+
+The bystander improvement is real (the box is better on 103 of 162 pairs, sign test
+p = 6.8 × 10⁻⁴) and **the target's own control is unchanged** (p = 0.64) — the box narrows
+what the condition speaks about without weakening what it says. Counting the pairs that
+cross the 30° line in either direction: 13 fixed, 6 broken, net 7.
+
+### The four-way outcome split, and what it is worth
+
+Two people, two questions, four outcomes: did the **target** turn, and did the **bystander**
+stay put. [`eval/quadeval.py`](eval/quadeval.py) reports the split.
+
+The criteria are not obvious and the first version of them was wrong. All 166 pairs were
+labelled by hand so that the automatic split could be checked against a person:
+
+| | human labels | automatic |
+|---|---|---|
+| ① target turned / bystander stayed | **83 (50.0 %)** | 109 (65.7 %) |
+| ② target turned / bystander turned too | **56 (33.7 %)** | 40 (24.1 %) |
+| ③ neither moved | **25 (15.1 %)** | 13 (7.8 %) |
+| ④ target still / bystander turned | **2 (1.2 %)** | 4 (2.4 %) |
+
+The first criteria agreed with the human labels on **41 %** of pairs — 55 % on the "did the
+target turn" axis, which is barely better than a coin. Three defects caused it:
+
+- `base_err − gaze_err > 20°` can never fire when `base_err` is already small, so any pair
+  whose source happened to face near the requested direction was scored "did not turn"
+  however well the output matched. Replaced by an absolute criterion OR'd with a relative one.
+- A 15° threshold for "the bystander moved" is far tighter than what a person calls moving.
+- An out-of-focus passer-by in the background counted as a bystander. The same head measured
+  0.0° of drift in the real target frame, which is self-contradictory. Every genuine bystander
+  in the benchmark has a head at least 0.478× the target's width; the background heads sit at
+  0.33–0.38×, so half the target's head width separates them cleanly.
+
+Corrected, agreement is **66.3 %** overall (77 % on the target axis, 88 % on the bystander
+axis). What remains is a one-sided bias: the automatic split puts 65.7 % of pairs in ① where
+the human labels put 50.0 %, about 16 points optimistic. **It is sound for ranking
+checkpoints of the same lineage and it is not a fact about the world.** Quote it with the
+human-agreement figure attached, or not at all.
+
+### Three hypotheses about bystander drift that the data refused
+
+Worth recording, because each was plausible and each is now closed:
+
+- *The composites teach "everybody turns".* No. In the multi-person training images the
+  bystander is pixel-identical between input and ground truth — median absolute difference
+  **1.37** over the bystander's own mask, against **33.4** over the target's. The supervision
+  already says the bystander must not move.
+- *The model never saw two equally prominent people.* No. The bystander-to-target head-height
+  ratio in the corpus has median **1.04**, and 87 % of pairs are above 0.9.
+- *The box is what drags the bystander along.* No. Among pairs where the bystander moved, the
+  box covers **7.5 %** of its body; among pairs where it stayed, **11.3 %** — the wrong way
+  round, and not significant. On 12 of the 58 drifting pairs the box does not touch the
+  bystander at all. Drift is scene-determined, not box-determined.
+
+---
+
 ## Repository layout
 
 ```
@@ -140,6 +251,8 @@ setup/download_models.py   fetch backbone / VAE / ControlNet weights
 src/
   qwen_models.py           Qwen backbone, VAE, QwenControlNet, patchify/RoPE helpers
   gaze_hsv_renderer.py     legacy HSV condition renderer (the RGB path superseded it)
+  target_head.py           which person the condition is about, and the box it is painted in
+  gaze3d_runner.py         the gaze3d estimator, used for measurement only (CC-BY-NC-4.0)
 
 data/wan/                  1. generate turnaround videos with Wan2.2
   gen_dataset.sh             batch driver across free GPUs
@@ -158,12 +271,16 @@ data/labeling/             2. label the frames, then cull them by hand
   phase3_dedup_id.py         per-identity cross-video farthest-point dedup
   phase4_build.py            builds "Gaze Label Studio", the human review tool
 
-data/preprocess/           3. precompute what training needs
+data/compose/              3. compose multi-person training images from single-person pairs
+  make_multiperson.py        paste a second person into a turnaround pair, at matched scale
+
+data/preprocess/           4. precompute what training needs
   precompute_head_boxes.py       head boxes in the 512 pad-to-square space
   precompute_head_boxes_dyaug.py the same for the dy-augmented frames
   eye_precompute.py              eye boxes for eye_boost
   build_heldout.py               held-out csv (identities never trained on)
   build_headbox_verify.py        payload for the head-box audit page
+  make_trainboxes.py             condition boxes for a corpus, by the head-box rule
 
 train/
   train_gaze_controlnet.py   baseline trainer (HITL-only and SHHQ-only runs)
@@ -171,6 +288,7 @@ train/
   train_stage2.py            curriculum stage 2: HITL-major + SHHQ replay, wrap-safe eval
   train_stage3.py            refinement attempt: loss rebalance + sigma shift (NEGATIVE result)
   train_stage4.py            refinement attempt: LPIPS on the decoded one-step estimate
+  train_stage5.py            mask channel + box-restricted condition (multi-person)
   run_train_hitl.sh          waits for a free GPU, auto-resumes after a crash
   run_train_stage1.sh
   run_train_stage2.sh
@@ -190,6 +308,10 @@ eval/
   full_rotation_v2.py        full 360° sweep → demo payload
   build_srcs_v2.py           pick front/side/back source frames + GT galleries
   crop_preview2.py           sanity-check the crop augmentation visually
+  eval_gt.py                 score a run against the human-labelled photograph benchmark
+  make_evalboxes.py          condition boxes for the benchmark, by the head-box rule
+  other_gaze.py              measure every NON-target person's gaze, source vs output
+  quadeval.py                the four-way outcome split, with its human-calibrated criteria
 
 demo/
   app.py                     Gradio app (Hugging Face Space)
@@ -262,6 +384,24 @@ picks *use 3D / use 6D / set own dy / discard*; its JSON export becomes the trai
 **This human pass is the dataset's main contribution** — the automatic labels alone are not
 good enough, and the audit pages under `eval/` exist to show why.
 
+### Compose multi-person training images
+
+Every turnaround pair has exactly one person in it, so a model trained on them alone never
+learns that the condition is about *somebody* rather than about the picture.
+`data/compose/make_multiperson.py` builds two-person images out of one-person pairs: person A
+turns (both frames come from A's own video), and person B is cut from a single frame of a
+different video and pasted into **both** frames at the same place, at a scale matched by head
+height, with one colour transform fitted to the scene. B is therefore bit-identical between
+input and ground truth, which is the supervision "this person must not move".
+
+```bash
+python data/compose/make_multiperson.py --n 10000 --out $GAZE_CORPORA/mp_v5 --dev cuda
+python data/preprocess/make_trainboxes.py --data $GAZE_CORPORA/mp_v5
+```
+
+The second command writes `boxes_headrule.json` next to the corpus. Those boxes already carry
+the 5 % pad, so training reads them with `--box_pad 0`.
+
 ### Precompute
 
 ```bash
@@ -312,6 +452,20 @@ and the **same rectangle is applied to both** — a different framing per side m
 unlearnable. Head and eye boxes are re-mapped through the crop, or the loss would weight the
 wrong patches. `eval/crop_preview2.py` renders what the augmentation actually does.
 
+#### Stage 5 — the condition becomes about a person
+
+```bash
+python train/train_stage5.py --data $GAZE_CORPORA/mp_v5 --out $GAZE_WORK/_cn_pt2B \
+       --resume $GAZE_WORK/_cn_stage2/cn_step040000.safetensors --start_step 0 \
+       --boxes boxes_headrule.json --cond_box 1 --box_pad 0 \
+       --steps 6000 --lr 5e-5 --accum 8 --mask_drop 0.1
+```
+
+Two things differ from stage 2: a zero-initialised mask channel summed into the ControlNet's
+image embedding, so the model is told *which* person; and `--cond_box 1`, which paints the
+gaze colour only inside that person's box. Because the mask embedder starts at zero, step 0
+reproduces stage 2 exactly — anything that changes afterwards was bought by this run.
+
 ### Evaluate
 
 ```bash
@@ -325,6 +479,30 @@ the value used at inference changes the numbers.
 
 Metric definitions, and what each one cannot tell you, are in
 [`docs/conventions.md`](docs/conventions.md).
+
+#### Against the photograph benchmark
+
+`eval_true_v*` compare a run against frames this project's own data engine generated, which
+makes them an in-distribution diagnostic. `eval/eval_gt.py` compares against **real
+photographs with human gaze labels** — 50 scenes, 360 views, and for a pair (view A → view B)
+the frame in which that person really is facing the requested direction.
+
+```bash
+# condition boxes for the benchmark, by the head-box rule (once)
+python eval/make_evalboxes.py --all 1
+
+# score a checkpoint on the multi-person split
+NAME=myrun python eval/eval_gt.py --name myrun --size 768 --steps 4 --seed 0        --pairs $GAZE_GT_EVAL/pairs_multi200.json        --cn $GAZE_WORK/_cn_pt2B/cn_step006000.safetensors        --cond_box 1 --box_json $GAZE_EVAL/boxes_headrule.json
+
+# every non-target person's gaze, source vs output
+python eval/other_gaze.py --runs myrun --out $GAZE_GT_EVAL/og_myrun.csv
+
+# the four-way split
+python eval/quadeval.py --name myrun --ogaze $GAZE_GT_EVAL/og_myrun.csv
+```
+
+`quadeval.py` drops any pair missing from the cached head-width table, so a run is scored on
+the same pairs the criteria were calibrated on. Pass `--require_heads 0` to keep them.
 
 ### Interactive demo
 
@@ -411,3 +589,16 @@ Probes: [`eval/res_test.py`](eval/res_test.py), [`eval/res_probe.py`](eval/res_p
 - **Back-facing outputs cannot be scored for identity**: ArcFace needs a face, so `id_sim`
   is averaged only over generations where one was detected, and `face_det` is reported
   alongside it.
+- **The four-way split is optimistic by about 16 points** on class ①, measured against human
+  labels on all 166 pairs. Use it to rank checkpoints, not to state a result.
+- **The photograph benchmark's multi-person split is small and correlated**: 186 pairs over
+  only 21 scenes, 9 pairs per scene, so the effective sample size is well below 186.
+- **9 of the 186 benchmark pairs have merged masks** (two people in one mask) and 9 have no
+  detected head, so the box rule falls back to the plain mask bounding box on those.
+- **The multi-person training images are composites.** Person B is pasted in, so lighting and
+  contact shadows are approximate; a model could in principle key on that rather than on the
+  condition. The bystander-drift measurements above argue it does not, but the composites are
+  not photographs and that bound stands.
+- **Pixel-identical is not reachable at bf16.** Re-running the same checkpoint, seed and
+  prompt gives a median absolute difference of 0–0.92 within one session and about 1.0 across
+  sessions or GPUs, so no pixel comparison below that scale means anything.

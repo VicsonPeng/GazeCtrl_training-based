@@ -11,6 +11,8 @@ export the roots you actually have -- the rest derive from them:
     export GAZE_WORK=$GAZE_ROOT/runs                 # checkpoints, per-run csvs, logs
     export GAZE_OUT=$GAZE_ROOT/outputs               # figures, demo payloads, html
     export GAZE_THIRD=$GAZE_ROOT/third_party         # 6DRepNet, yolo_seg, Wan2.2
+    export GAZE_EVAL=$GAZE_ROOT/datasets/gazectrl_eval   # the human-labelled photo benchmark
+    export GAZE_CORPORA=$GAZE_ROOT/datasets              # composed training corpora
 """
 import os
 
@@ -25,10 +27,17 @@ WORK    = _env("GAZE_WORK",    "/home/vicson/gaze_diag")
 OUT     = _env("GAZE_OUT",     ROOT + "/gaze_controlnet/eval_samples")
 THIRD   = _env("GAZE_THIRD",   ROOT)
 
+# the real-photograph benchmark and the composed training corpora (added 2026-11)
+EVAL    = _env("GAZE_EVAL",    ROOT + "/datasets/gazectrl_eval")
+CORPORA = _env("GAZE_CORPORA", ROOT + "/datasets")
+GT_EVAL = _env("GAZE_GT_EVAL", OUT + "/gt_eval")
+
 # third-party checkpoints used as measurement instruments, never trained here
 SIXDREP_DIR  = _env("GAZE_SIXDREP_DIR",  THIRD + "/6DRepNet/sixdrepnet")
 SIXDREP_CKPT = _env("GAZE_SIXDREP_CKPT", SIXDREP_DIR + "/6DRepNet360_Full-Rotation_300W_LP+Panoptic.pth")
 YOLO_HEAD    = _env("GAZE_YOLO_HEAD",    THIRD + "/yolo_seg/yolov8_head.pt")
+YOLO_SEG     = _env("GAZE_YOLO_SEG",     THIRD + "/yolo_seg/yolo11m-seg.pt")
+GAZE3D_DIR   = _env("GAZE_GAZE3D_DIR",   ROOT + "/_gaze3d_probe")
 WAN_DIR      = _env("GAZE_WAN_DIR",      THIRD + "/Wan2.2")
 
 # weights inside GAZE_MODELS (layout as produced by setup/download_models.py)

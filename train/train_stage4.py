@@ -34,7 +34,7 @@ import sys as _sys, os as _os
 _p = _os.path.dirname(_os.path.abspath(__file__))
 while _p != '/' and not _os.path.exists(_os.path.join(_p, 'gaze_paths.py')):
     _p = _os.path.dirname(_p)
-_sys.path.insert(0, _p)
+_sys.path.insert(0, _p); _sys.path.insert(0, _os.path.join(_p, 'src'))
 from gaze_paths import (ROOT, DATASET, RAW, MODELS, WORK, OUT, THIRD,
                         SIXDREP_DIR, SIXDREP_CKPT, YOLO_HEAD, WAN_DIR)
 import argparse, os, math, time, random, json, sys
