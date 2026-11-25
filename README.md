@@ -225,20 +225,29 @@ the human labels put 50.0 %, about 16 points optimistic. **It is sound for ranki
 checkpoints of the same lineage and it is not a fact about the world.** Quote it with the
 human-agreement figure attached, or not at all.
 
-### Three hypotheses about bystander drift that the data refused
+### Where bystander drift does *not* come from, and one place it might
 
-Worth recording, because each was plausible and each is now closed:
+Two plausible explanations are closed by measurement, and a third is left open because the
+measurement went against it.
 
-- *The composites teach "everybody turns".* No. In the multi-person training images the
-  bystander is pixel-identical between input and ground truth — median absolute difference
-  **1.37** over the bystander's own mask, against **33.4** over the target's. The supervision
-  already says the bystander must not move.
-- *The model never saw two equally prominent people.* No. The bystander-to-target head-height
-  ratio in the corpus has median **1.04**, and 87 % of pairs are above 0.9.
-- *The box is what drags the bystander along.* No. Among pairs where the bystander moved, the
-  box covers **7.5 %** of its body; among pairs where it stayed, **11.3 %** — the wrong way
-  round, and not significant. On 12 of the 58 drifting pairs the box does not touch the
-  bystander at all. Drift is scene-determined, not box-determined.
+**Closed — the supervision is not at fault.** In the multi-person training images the
+bystander is bit-identical between input and ground truth: median absolute difference
+**0.00** over its own mask (90th percentile also 0.00), against **37.5** over the target's.
+The corpus already says, as plainly as it can, that the bystander must not move.
+
+**Closed — the box is not dragging it along.** Among pairs where the bystander moved, the box
+covers **7.5 %** of its body; among pairs where it stayed, **11.3 %** — the wrong way round,
+and not significant (p = 0.67). On 12 of the 58 drifting pairs the box does not touch the
+bystander at all. Drift is scene-determined, not box-determined: it is near-universal in some
+scenes and absent in others.
+
+**Open — the bystander is smaller in training than in the benchmark.** The scale sampler
+places the pasted person further back whenever a head-matched placement will not fit, so the
+bystander-to-target head ratio in the corpus has median **0.70**, with only **8 %** above 0.9.
+In the benchmark the median is **0.83** and **37 %** are above 0.9. The model therefore sees
+fewer equally-prominent second people in training than it is asked to handle at test time.
+This is a real train/test mismatch, it is not yet shown to cause the drift, and it is listed
+among the limitations rather than claimed as the explanation.
 
 ---
 
@@ -597,8 +606,9 @@ Probes: [`eval/res_test.py`](eval/res_test.py), [`eval/res_probe.py`](eval/res_p
   detected head, so the box rule falls back to the plain mask bounding box on those.
 - **The multi-person training images are composites.** Person B is pasted in, so lighting and
   contact shadows are approximate; a model could in principle key on that rather than on the
-  condition. The bystander-drift measurements above argue it does not, but the composites are
-  not photographs and that bound stands.
+  condition. The composites are not photographs and that bound stands.
+- **The composed bystander is smaller than the benchmark's.** Head-ratio median 0.70 in
+  training against 0.83 in the benchmark, 8 % vs 37 % above 0.9. An open train/test mismatch.
 - **Pixel-identical is not reachable at bf16.** Re-running the same checkpoint, seed and
   prompt gives a median absolute difference of 0–0.92 within one session and about 1.0 across
   sessions or GPUs, so no pixel comparison below that scale means anything.
