@@ -177,20 +177,38 @@ head was detected at all, so rule 1 could not be applied.
 
 ### What the box bought
 
-`cn_step006000` of the post-trained run, 166 pairs that both settings share, seed 0,
+`cn_step006000` of the post-trained run, on the 166 pairs all three settings share. Seed 0,
 4-step Lightning LoRA at scale 1.0, `cn_scale` 1.0, shift 3.0, 768 px, real human gaze
-labels. The two runs differ in the geometry of the condition box and in nothing else.
+labels. Same weights, same sampler, same pairs — the three runs differ only in **where the
+gaze colour is painted**: over the whole frame, inside the target's mask bounding box plus a
+5 % pad, or inside the head-rule box.
 
-| | flat whole-frame fill | head-rule box |
-|---|---|---|
-| target gaze error (median) | 30.9° | 30.9° |
-| bystander drift (median) | 13.4° | **8.8°** |
-| bystander moved ≥ 30° | 34.9 % | **30.7 %** |
+| | flat, whole frame | mask bbox + 5 % | head rule |
+|---|---|---|---|
+| target gaze error (median) | 29.0° | 30.9° | 30.9° |
+| bystander drift (median) | 29.8° | 13.4° | **8.8°** |
+| bystander moved ≥ 30° | 48.8 % | 34.9 % | **30.7 %** |
 
-The bystander improvement is real (the box is better on 103 of 162 pairs, sign test
-p = 6.8 × 10⁻⁴) and **the target's own control is unchanged** (p = 0.64) — the box narrows
-what the condition speaks about without weakening what it says. Counting the pairs that
-cross the 30° line in either direction: 13 fixed, 6 broken, net 7.
+Two separate wins, and they stack:
+
+- **Putting the condition in a box at all** takes bystander drift from 29.8° to 13.4° —
+  better on 122 of 165 pairs, sign test p = 5.9 × 10⁻¹⁰.
+- **Making that box follow the head rule** takes it from 13.4° to 8.8° — better on 103 of
+  162 pairs, p = 6.8 × 10⁻⁴. Counting pairs that cross the 30° line either way: 13 fixed,
+  6 broken, net 7.
+
+End to end, flat → head rule is 29.8° → 8.8° (p = 1.4 × 10⁻¹¹) while **the target's own
+control is statistically unchanged** (29.0° → 30.9°, p = 0.59). The box narrows what the
+condition speaks about without weakening what it says.
+
+### What the post-train did *not* buy
+
+Stage 5 bought selectivity, not better rotation. On the single-person benchmark split (386
+pairs) the stage-2 checkpoint still leads: median gaze error **26.2°** for `stage2-50k`
+against **30.6°** for the stage-5 lineage. That is why **`stage2-40k` remains the released
+model** and the demo page still shows its sweep: the post-trained checkpoints are better at
+leaving other people alone and no better — slightly worse — at turning the one person they
+are pointed at.
 
 ### The four-way outcome split, and what it is worth
 
